@@ -3764,44 +3764,47 @@ class LocalHttpServer(
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
                     Jika Anda memiliki rekaman qari masjid sendiri atau shalawat kustom berformat MP3 / WAV / M4A, Anda dapat mengunggahnya ke memori TV.
                 </p>
-                <form id="formUploadMurottal" onsubmit="event.preventDefault(); uploadMurottalFile(event); return false;">
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>Nama Surah / Judul Audio</label>
-                            <input type="text" id="uploadMurottalSurah" class="form-control" placeholder="Contoh: Surah Ar-Rahman">
-                        </div>
-                        <div class="form-group">
-                            <label>Nama Qari / Pelantun / Masjid</label>
-                            <input type="text" id="uploadMurottalQari" class="form-control" placeholder="Contoh: Syaikh Mishary / Imam Masjid">
-                        </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Nama Surah / Judul Audio:</label>
+                        <input type="text" id="uploadMurottalSurah" class="form-control" placeholder="Contoh: Surah Ar-Rahman">
                     </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>Alokasi Waktu Sholat</label>
-                            <select id="uploadMurottalPrayer" class="form-control">
-                                <option value="ALL">Semua Waktu Sholat</option>
-                                <option value="SUBUH">Khusus Waktu Subuh (Tarhim / Murottal)</option>
-                                <option value="DZUHUR">Khusus Waktu Dzuhur</option>
-                                <option value="ASHAR">Khusus Waktu Ashar</option>
-                                <option value="MAGHRIB">Khusus Waktu Maghrib</option>
-                                <option value="ISYA">Khusus Waktu Isya'</option>
-                                <option value="JUMAT">Khusus Sholat Jum'at</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Pilih File Audio (MP3 / WAV / M4A)</label>
-                            <input type="file" id="uploadMurottalFile" accept="audio/*,.mp3,.wav,.m4a,.ogg" class="form-control" style="padding: 6px;" onchange="onAudioFileSelected(this)">
-                        </div>
+                    <div class="form-group">
+                        <label>Nama Qari / Pelantun / Masjid:</label>
+                        <input type="text" id="uploadMurottalQari" class="form-control" placeholder="Contoh: Syaikh Mishary / Imam Masjid">
                     </div>
-                    <div id="uploadFileInfo" style="display: none; font-size: 12px; color: #065f46; font-weight: 600; margin-bottom: 12px; background: #ecfdf5; padding: 10px 14px; border-radius: 8px; border: 1px solid #a7f3d0;"></div>
-                    <div id="uploadProgressBar" style="display: none; background: #e5e7eb; border-radius: 8px; height: 14px; margin-bottom: 6px; overflow: hidden;">
-                        <div id="uploadProgressFill" style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: 0%; transition: width 0.2s;"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Alokasi Waktu Sholat:</label>
+                        <select id="uploadMurottalPrayer" class="form-control">
+                            <option value="ALL">Semua Waktu Sholat</option>
+                            <option value="SUBUH">Khusus Waktu Subuh (Tarhim / Murottal)</option>
+                            <option value="DZUHUR">Khusus Waktu Dzuhur</option>
+                            <option value="ASHAR">Khusus Waktu Ashar</option>
+                            <option value="MAGHRIB">Khusus Waktu Maghrib</option>
+                            <option value="ISYA">Khusus Waktu Isya'</option>
+                            <option value="JUMAT">Khusus Sholat Jum'at</option>
+                        </select>
                     </div>
-                    <div id="uploadProgressText" style="display: none; font-size: 11.5px; color: #4b5563; text-align: center; margin-bottom: 12px; font-weight: 600;"></div>
-                    <button type="button" class="btn-primary" id="btnSubmitUploadMurottal" onclick="uploadMurottalFile(event)">
-                        🚀 Upload File Audio ke TV
-                    </button>
-                </form>
+                    <div class="form-group">
+                        <label>Pilih File Audio dari HP / Laptop (maks. 120 MB):</label>
+                        <input type="file" id="uploadMurottalFile" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.opus" class="form-control" onchange="onAudioFileSelected(this)">
+                    </div>
+                </div>
+                <div id="uploadFileInfo" style="display: none; font-size: 12.5px; color: #059669; background: #ecfdf5; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px;"></div>
+
+                <div id="murottalUploadProgressContainer" style="display:none; margin-bottom:14px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; font-weight:600; color:#334155;">
+                        <span id="murottalUploadProgressLabel">Mengunggah file ke TV...</span>
+                        <span id="murottalUploadProgressPercent">0%</span>
+                    </div>
+                    <div style="width:100%; height:10px; background:#e2e8f0; border-radius:5px; overflow:hidden;">
+                        <div id="murottalUploadProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #10b981, #059669); transition:width 0.2s;"></div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-primary" id="btnSubmitUploadMurottal" style="width:100%;" onclick="uploadMurottalFile()">🚀 Upload File Audio ke TV</button>
 
                 <div style="margin-top: 20px;">
                     <h3 style="font-size: 13px; font-weight: 700; color: var(--primary-dark); margin-bottom: 10px;">
@@ -5728,7 +5731,7 @@ class LocalHttpServer(
             const info = document.getElementById('uploadFileInfo');
             if (info) {
                 info.style.display = 'block';
-                info.innerHTML = '🎵 <strong>File Siap Diupload:</strong> ' + file.name + ' <span style="background:#059669; color:#fff; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:6px;">' + sizeMb + ' MB</span>';
+                info.innerHTML = '🎵 <strong>File Siap Di-upload:</strong> ' + escapeHtml(file.name) + ' <span style="background:#059669; color:#fff; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:6px;">' + sizeMb + ' MB</span>';
             }
             const surahInput = document.getElementById('uploadMurottalSurah');
             if (surahInput && !surahInput.value.trim()) {
@@ -5737,49 +5740,42 @@ class LocalHttpServer(
             }
         }
 
-        async function uploadMurottalFile(e) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+        function uploadMurottalFile() {
             const fileInput = document.getElementById('uploadMurottalFile');
             if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
                 alert('Silakan pilih file audio (MP3 / WAV / M4A) terlebih dahulu!');
-                return false;
+                return;
             }
             const file = fileInput.files[0];
             if (file.size > 120 * 1024 * 1024) {
                 alert('Ukuran file terlalu besar! Maksimal ukuran audio adalah 120 MB.');
-                return false;
+                return;
             }
 
             let surah = document.getElementById('uploadMurottalSurah').value.trim();
             if (!surah) {
                 surah = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").trim() || 'Murottal Al-Qur\'an';
-                document.getElementById('uploadMurottalSurah').value = surah;
             }
             const qari = document.getElementById('uploadMurottalQari').value.trim() || 'Qari Pilihan';
             const prayer = document.getElementById('uploadMurottalPrayer').value || 'ALL';
+            const title = surah + ' (' + qari + ')';
+
             const btn = document.getElementById('btnSubmitUploadMurottal');
-            const progress = document.getElementById('uploadProgressBar');
-            const progressFill = document.getElementById('uploadProgressFill');
-            const progressText = document.getElementById('uploadProgressText');
+            const progressContainer = document.getElementById('murottalUploadProgressContainer');
+            const progressBar = document.getElementById('murottalUploadProgressBar');
+            const progressLabel = document.getElementById('murottalUploadProgressLabel');
+            const progressPercent = document.getElementById('murottalUploadProgressPercent');
 
             btn.disabled = true;
-            btn.innerText = '⏳ Sedang Mengunggah Audio ke TV...';
-            if (progress) progress.style.display = 'block';
-            if (progressText) {
-                progressText.style.display = 'block';
-                progressText.innerText = 'Menyiapkan transmisi audio...';
-            }
-            if (progressFill) progressFill.style.width = '0%';
+            btn.innerText = '⏳ Mengunggah Audio ke TV...';
+            if (progressContainer) progressContainer.style.display = 'block';
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressPercent) progressPercent.innerText = '0%';
+            if (progressLabel) progressLabel.innerText = 'Mengunggah (' + (file.size / (1024 * 1024)).toFixed(1) + ' MB)...';
 
             const token = localStorage.getItem('masjidku_session_token') || '';
-            let ext = 'mp3';
-            if (file.name && file.name.includes('.')) {
-                ext = file.name.split('.').pop().toLowerCase().trim() || 'mp3';
-            }
-            const uploadUrl = '/api/upload-murottal?title=' + encodeURIComponent(surah + ' (' + qari + ')') +
+            const ext = file.name.split('.').pop().toLowerCase().trim() || 'mp3';
+            const uploadUrl = '/api/upload-murottal?title=' + encodeURIComponent(title) +
                 '&surah=' + encodeURIComponent(surah) +
                 '&qari=' + encodeURIComponent(qari) +
                 '&prayerTime=' + encodeURIComponent(prayer) +
@@ -5787,96 +5783,78 @@ class LocalHttpServer(
                 '&size=' + file.size +
                 '&token=' + encodeURIComponent(token);
 
-            // Helper to clean UI after finish
-            function cleanupUI() {
-                btn.disabled = false;
-                btn.innerText = '🚀 Upload File Audio ke TV';
-                setTimeout(() => {
-                    if (progress) progress.style.display = 'none';
-                    if (progressText) progressText.style.display = 'none';
-                    if (progressFill) progressFill.style.width = '0%';
-                }, 2000);
-            }
-
-            function handleSuccess(msg) {
-                cleanupUI();
-                showToast('✅ ' + (msg || 'Audio berhasil disimpan di TV!'));
-                fileInput.value = '';
-                const fInfo = document.getElementById('uploadFileInfo');
-                if (fInfo) fInfo.style.display = 'none';
-                const sInput = document.getElementById('uploadMurottalSurah');
-                if (sInput) sInput.value = '';
-                setMurottalSource('MANUAL_UPLOAD');
-                loadStatus();
-            }
-
-            // Primary upload via XMLHttpRequest with real-time percentage progress
             const xhr = new XMLHttpRequest();
             xhr.open('POST', uploadUrl, true);
             xhr.timeout = 600000; // 10 menit
-            if (token) {
-                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                xhr.setRequestHeader('X-Auth-Token', token);
-            }
-            xhr.setRequestHeader('X-Audio-Title', encodeURIComponent(surah + ' (' + qari + ')'));
+            xhr.setRequestHeader('X-Auth-Token', token);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.setRequestHeader('X-Audio-Title', encodeURIComponent(title));
             xhr.setRequestHeader('X-Audio-Surah', encodeURIComponent(surah));
             xhr.setRequestHeader('X-Audio-Qari', encodeURIComponent(qari));
             xhr.setRequestHeader('X-Audio-Prayer', encodeURIComponent(prayer));
-            xhr.setRequestHeader('X-Audio-Ext', encodeURIComponent(ext));
-            xhr.setRequestHeader('X-Audio-Size', String(file.size));
+            xhr.setRequestHeader('X-Audio-Ext', ext);
+            xhr.setRequestHeader('X-Audio-Size', file.size.toString());
 
-            xhr.upload.onprogress = function(evt) {
-                if (evt.lengthComputable) {
-                    const percent = Math.round((evt.loaded / evt.total) * 100);
-                    const loadedMb = (evt.loaded / (1024 * 1024)).toFixed(1);
-                    const totalMb = (evt.total / (1024 * 1024)).toFixed(1);
-                    if (progressFill) progressFill.style.width = percent + '%';
-                    btn.innerText = '⏳ Mengunggah: ' + percent + '%';
-                    if (progressText) progressText.innerText = 'Terunggah ' + loadedMb + ' MB dari ' + totalMb + ' MB (' + percent + '%)';
+            xhr.upload.onprogress = function (e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    if (progressBar) progressBar.style.width = percent + '%';
+                    if (progressPercent) progressPercent.innerText = percent + '%';
+                    if (progressLabel) progressLabel.innerText = 'Mengunggah: ' + ((e.loaded / (1024 * 1024)).toFixed(1)) + ' / ' + ((e.total / (1024 * 1024)).toFixed(1)) + ' MB (' + percent + '%)';
                 }
             };
 
-            xhr.onload = function() {
-                if (xhr.status === 200) {
+            xhr.onload = function () {
+                btn.disabled = false;
+                btn.innerText = '🚀 Upload File Audio ke TV';
+                setTimeout(() => {
+                    if (progressContainer) progressContainer.style.display = 'none';
+                    if (progressBar) progressBar.style.width = '0%';
+                }, 2000);
+
+                if (xhr.status >= 200 && xhr.status < 300) {
                     try {
-                        const resData = JSON.parse(xhr.responseText);
-                        if (resData.status === 'ok') {
-                            handleSuccess(resData.message);
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.status === 'ok') {
+                            showToast(data.message || 'File audio murottal berhasil diunggah!');
+                            document.getElementById('uploadMurottalSurah').value = '';
+                            document.getElementById('uploadMurottalQari').value = '';
+                            document.getElementById('uploadMurottalFile').value = '';
+                            const fInfo = document.getElementById('uploadFileInfo');
+                            if (fInfo) fInfo.style.display = 'none';
+                            setMurottalSource('MANUAL_UPLOAD');
+                            loadStatus();
                         } else {
-                            cleanupUI();
-                            alert('Gagal: ' + (resData.message || 'Gagal upload audio'));
+                            alert(data.message || 'Gagal mengunggah audio.');
                         }
-                    } catch(e) {
-                        handleSuccess('Audio berhasil disimpan di TV!');
+                    } catch (e) {
+                        showToast('File audio murottal berhasil diunggah!');
+                        setMurottalSource('MANUAL_UPLOAD');
+                        loadStatus();
                     }
                 } else if (xhr.status === 401) {
-                    cleanupUI();
-                    alert('Sesi login berakhir. Silakan masukkan PIN kembali.');
+                    alert('Sesi login berakhir. Silakan login kembali.');
                     showLoginSection();
                 } else {
-                    cleanupUI();
-                    alert('Gagal mengunggah audio ke TV (HTTP ' + xhr.status + '). Pastikan HP dan TV tersambung WiFi yang sama.');
+                    alert('Gagal mengunggah audio (HTTP ' + xhr.status + '). Periksa koneksi WiFi TV.');
                 }
             };
 
-            xhr.onerror = function() {
-                cleanupUI();
-                alert('Gagal mengunggah file audio ke TV. Pastikan HP dan TV tersambung WiFi yang sama.');
+            xhr.onerror = function () {
+                btn.disabled = false;
+                btn.innerText = '🚀 Upload File Audio ke TV';
+                if (progressContainer) progressContainer.style.display = 'none';
+                alert('Terjadi kesalahan jaringan saat mengunggah audio ke TV.');
             };
 
-            xhr.ontimeout = function() {
-                cleanupUI();
+            xhr.ontimeout = function () {
+                btn.disabled = false;
+                btn.innerText = '🚀 Upload File Audio ke TV';
+                if (progressContainer) progressContainer.style.display = 'none';
                 alert('Upload waktu habis (Timeout). Pastikan sinyal WiFi stabil.');
             };
 
-            try {
-                xhr.send(file);
-            } catch (err) {
-                cleanupUI();
-                console.error('XHR send error:', err);
-                alert('Gagal mengirim audio: ' + err.message);
-            }
-            return false;
+            xhr.send(file);
         }
 
         async function deleteUploadedAudio(id) {

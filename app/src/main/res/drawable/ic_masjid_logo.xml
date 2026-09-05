@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+
+    <!-- === OUTER CIRCLE BACKGROUND (Emerald Deep) === -->
+    <path
+        android:fillColor="#FF022C22"
+        android:pathData="M48,2 C72.3,2 94,23.7 94,48 C94,72.3 72.3,94 48,94 C23.7,94 2,72.3 2,48 C2,23.7 23.7,2 48,2 Z" />
+
+    <!-- === GOLDEN OUTER RING BORDER === -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFD54F"
+        android:strokeWidth="2.5"
+        android:pathData="M48,4.5 C71,4.5 91.5,25 91.5,48 C91.5,71 71,91.5 48,91.5 C25,91.5 4.5,71 4.5,48 C4.5,25 25,4.5 48,4.5 Z" />
+
+    <!-- === INNER BORDER RING (thinner gold) === -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#F59E0B"
+        android:strokeWidth="0.8"
+        android:pathData="M48,9 C68.5,9 87,27.5 87,48 C87,68.5 68.5,87 48,87 C27.5,87 9,68.5 9,48 C9,27.5 27.5,9 48,9 Z" />
+
+    <!-- === ARABESQUE ORNAMENT DOTS (top arc) === -->
+    <path android:fillColor="#FFD54F" android:pathData="M48,11 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0"/>
+    <path android:fillColor="#F59E0B" android:pathData="M36,13.5 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0"/>
+    <path android:fillColor="#F59E0B" android:pathData="M60,13.5 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0"/>
+    <path android:fillColor="#FFD54F" android:pathData="M27,18.5 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0 -1.6,0"/>
+    <path android:fillColor="#FFD54F" android:pathData="M69,18.5 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0 -1.6,0"/>
+    <path android:fillColor="#F59E0B" android:pathData="M20,26 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0 -1.6,0"/>
+    <path android:fillColor="#F59E0B" android:pathData="M76,26 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0 -1.6,0"/>
+
+    <!-- Arabesque small ornament lines top -->
+    <path android:fillColor="#00000000" android:strokeColor="#FFD54F" android:strokeWidth="0.7"
+        android:pathData="M42,11.5 C44,13 44,15 44,15 M54,11.5 C52,13 52,15 52,15"/>
+    <path android:fillColor="#00000000" android:strokeColor="#F59E0B" android:strokeWidth="0.6"
+        android:pathData="M31,14.5 C33,16 33,18 33,18 M65,14.5 C63,16 63,18 63,18"/>
+
+    <!-- === LEFT MINARET === -->
+    <path android:fillColor="#D4A83A" android:pathData="M18,68 L22,68 L22,40 L18,40 Z" />
+    <path android:fillColor="#FFD54F" android:pathData="M16.5,50 L23.5,50 L23.5,52 L16.5,52 Z" />
+    <path android:fillColor="#E8BC46" android:pathData="M18.5,35 L21.5,35 L22,40 L18,40 Z" />
+    <path android:fillColor="#FFD54F" android:pathData="M20,28 C17.5,30 17,33 18.5,35 L21.5,35 C23,33 22.5,30 20,28 Z" />
+    <path android:fillColor="#FFE082" android:strokeColor="#FFE082" android:strokeWidth="1"
+        android:pathData="M20,23 L20,28" />
+    <path android:fillColor="#FFE082"
+        android:pathData="M20,21 C18.5,22.5 18.5,24.5 20,24 C20.5,24 21,23 20,21 Z" />
+
+    <!-- === RIGHT MINARET === -->
+    <path android:fillColor="#D4A83A" android:pathData="M74,68 L78,68 L78,40 L74,40 Z" />
+    <path android:fillColor="#FFD54F" android:pathData="M72.5,50 L79.5,50 L79.5,52 L72.5,52 Z" />
+    <path android:fillColor="#E8BC46" android:pathData="M74.5,35 L77.5,35 L78,40 L74,40 Z" />
+    <path android:fillColor="#FFD54F" android:pathData="M76,28 C73.5,30 73,33 74.5,35 L77.5,35 C79,33 78.5,30 76,28 Z" />
+    <path android:fillColor="#FFE082" android:strokeColor="#FFE082" android:strokeWidth="1"
+        android:pathData="M76,23 L76,28" />
+    <path android:fillColor="#FFE082"
+        android:pathData="M76,21 C74.5,22.5 74.5,24.5 76,24 C76.5,24 77,23 76,21 Z" />
+
+    <!-- === MAIN MOSQUE BODY === -->
+    <path android:fillColor="#C9962E" android:pathData="M19,68 L77,68 L77,71 L19,71 Z" />
+    <path android:fillColor="#E8BC46" android:pathData="M23,45 L73,45 L73,68 L23,68 Z" />
+    <path android:fillColor="#D4A83A" android:pathData="M23,45 L27,45 L27,68 L23,68 Z" />
+    <path android:fillColor="#D4A83A" android:pathData="M69,45 L73,45 L73,68 L69,68 Z" />
+
+    <!-- Side small domes -->
+    <path android:fillColor="#E8BC46" android:pathData="M27,45 C27,40 34,38 34,45 Z" />
+    <path android:fillColor="#FFD54F" android:pathData="M30.5,38 C28,39.5 27,42 27,45 C29,44 31,41 30.5,38 Z" />
+    <path android:fillColor="#E8BC46" android:pathData="M69,45 C69,40 62,38 62,45 Z" />
+    <path android:fillColor="#FFD54F" android:pathData="M65.5,38 C68,39.5 69,42 69,45 C67,44 65,41 65.5,38 Z" />
+
+    <!-- === MAIN CENTRAL DOME === -->
+    <path android:fillColor="#FFD54F"
+        android:pathData="M48,20 C36,20 28,30 28,42 C28,44 28,45 28,45 L68,45 C68,45 68,44 68,42 C68,30 60,20 48,20 Z" />
+    <path android:fillColor="#FFE082"
+        android:pathData="M48,20 C40,22 33,30 32,42 L35,42 C36,31 42,23 48,20 Z" />
+    <path android:fillColor="#D4A83A"
+        android:pathData="M64,42 L68,42 C67,31 61,22 55,20 C60,23 64,32 64,42 Z" />
+    <path android:fillColor="#E8BC46" android:pathData="M45,16 L51,16 L51,20 L45,20 Z" />
+    <path android:fillColor="#FFD54F" android:strokeColor="#FFD54F" android:strokeWidth="1.2"
+        android:pathData="M48,10 L48,16" />
+
+    <!-- === CRESCENT MOON AND STAR === -->
+    <path android:fillColor="#FFD54F"
+        android:pathData="M48,6 C44,7.5 42,10.5 43,13.5 C44.5,11 47,9.5 50,9.5 C47.5,8.5 47,7 48,6 Z" />
+    <path android:fillColor="#FFE082"
+        android:pathData="M52,9 L52.8,11.5 L55.5,11.5 L53.4,13 L54.2,15.5 L52,14 L49.8,15.5 L50.6,13 L48.5,11.5 L51.2,11.5 Z" />
+
+    <!-- === MOSQUE ARCHWAY / ENTRANCE === -->
+    <path android:fillColor="#022C22"
+        android:pathData="M39,68 L39,55 C39,49 57,49 57,55 L57,68 Z" />
+    <path android:fillColor="#F59E0B"
+        android:pathData="M39,55 C39,49.5 43,47 48,47 C53,47 57,49.5 57,55 L55,55 C55,50.5 52,49 48,49 C44,49 41,50.5 41,55 Z" />
+    <path android:fillColor="#011611"
+        android:pathData="M42,68 L42,57 C42,53 54,53 54,57 L54,68 Z" />
+    <path android:fillColor="#00000000" android:strokeColor="#F59E0B" android:strokeWidth="0.5"
+        android:pathData="M42,57 C42,53 54,53 54,57" />
+
+    <!-- Side windows -->
+    <path android:fillColor="#022C22" android:pathData="M26,62 L32,62 L32,55 C32,52.5 26,52.5 26,55 Z" />
+    <path android:fillColor="#022C22" android:pathData="M64,62 L70,62 L70,55 C70,52.5 64,52.5 64,55 Z" />
+    <path android:fillColor="#F59E0B" android:pathData="M26,55 C26,52 32,52 32,55" />
+    <path android:fillColor="#F59E0B" android:pathData="M64,55 C64,52 70,52 70,55" />
+
+    <!-- === DECORATIVE LINE === -->
+    <path android:fillColor="#00000000" android:strokeColor="#F59E0B" android:strokeWidth="0.7"
+        android:pathData="M20,75 L76,75" />
+
+    <!-- === ALIJAYA-NET TEXT (pixel-path style) === -->
+    <!-- A -->
+    <path android:fillColor="#FFD54F" android:pathData="M20,84 L22,78.5 L24,84 L23.2,84 L22,80.5 L20.8,84 Z M21.2,82 L22.8,82 L22.8,82.6 L21.2,82.6 Z"/>
+    <!-- L -->
+    <path android:fillColor="#FFD54F" android:pathData="M25,78.5 L25.7,78.5 L25.7,83.3 L28,83.3 L28,84 L25,84 Z"/>
+    <!-- I -->
+    <path android:fillColor="#FFD54F" android:pathData="M29,78.5 L29.7,78.5 L29.7,84 L29,84 Z"/>
+    <!-- J -->
+    <path android:fillColor="#FFD54F" android:pathData="M30.5,78.5 L31.2,78.5 L31.2,83 C31.2,83.8 30.5,84.3 29.8,83.7 L30.2,83.2 C30.5,83.5 30.5,83.3 30.5,83 Z"/>
+    <!-- A -->
+    <path android:fillColor="#FFD54F" android:pathData="M32,84 L34,78.5 L36,84 L35.2,84 L34,80.5 L32.8,84 Z M33.2,82 L34.8,82 L34.8,82.6 L33.2,82.6 Z"/>
+    <!-- Y -->
+    <path android:fillColor="#FFD54F" android:pathData="M37,78.5 L38.2,81 L39.4,78.5 L40.2,78.5 L38.6,81.8 L38.6,84 L37.8,84 L37.8,81.8 L36.2,78.5 Z"/>
+    <!-- A -->
+    <path android:fillColor="#FFD54F" android:pathData="M41,84 L43,78.5 L45,84 L44.2,84 L43,80.5 L41.8,84 Z M42.2,82 L43.8,82 L43.8,82.6 L42.2,82.6 Z"/>
+    <!-- dash -->
+    <path android:fillColor="#F59E0B" android:pathData="M46,81.2 L47.5,81.2 L47.5,81.8 L46,81.8 Z"/>
+    <!-- N -->
+    <path android:fillColor="#FFD54F" android:pathData="M48.5,78.5 L49.2,78.5 L51.3,83 L51.3,78.5 L52,78.5 L52,84 L51.3,84 L49.2,79.5 L49.2,84 L48.5,84 Z"/>
+    <!-- E -->
+    <path android:fillColor="#FFD54F" android:pathData="M53,78.5 L56.5,78.5 L56.5,79.2 L53.7,79.2 L53.7,80.8 L56,80.8 L56,81.5 L53.7,81.5 L53.7,83.3 L56.5,83.3 L56.5,84 L53,84 Z"/>
+    <!-- T -->
+    <path android:fillColor="#FFD54F" android:pathData="M57.5,78.5 L61,78.5 L61,79.2 L59.6,79.2 L59.6,84 L58.9,84 L58.9,79.2 L57.5,79.2 Z"/>
+
+    <!-- Small decorative dots bottom -->
+    <path android:fillColor="#F59E0B" android:pathData="M31.5,87 m-0.7,0 a0.7,0.7 0 1,0 1.4,0 a0.7,0.7 0 1,0 -1.4,0"/>
+    <path android:fillColor="#FFD54F" android:pathData="M48,88 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0 -1.6,0"/>
+    <path android:fillColor="#F59E0B" android:pathData="M64.5,87 m-0.7,0 a0.7,0.7 0 1,0 1.4,0 a0.7,0.7 0 1,0 -1.4,0"/>
+
+</vector>
+

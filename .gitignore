@@ -1,0 +1,40 @@
+# Built-in Android build outputs & binaries
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+/build
+/*/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Gradle & Kotlin caches
+.gradle/
+.kotlin/
+gradle/daemon/
+
+# Android Studio & IDE
+*.iml
+.idea/
+.vscode/
+.DS_Store
+
+# Local properties & environment variables
+local.properties
+.env
+.env.local
+
+# Keystore and Release Signing Security (DO NOT commit private signing keys)
+*.jks
+*.keystore
+debug.keystore
+keystore.properties
+KEYSTORE_INFO.md
+
+# Antigravity & Scratch files
+.antigravity/
+test_extracted.js
+*.log
+

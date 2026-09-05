@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.65"
+        android:scaleY="0.65"
+        android:translateX="18.9"
+        android:translateY="18.9">
+        <!-- Mosque Base -->
+        <path
+            android:fillColor="#E6C875"
+            android:pathData="M24,78 L84,78 L84,84 L24,84 Z" />
+        <path
+            android:fillColor="#F6E09E"
+            android:pathData="M28,54 L80,54 L80,78 L28,78 Z" />
+        <!-- Archway -->
+        <path
+            android:fillColor="#0D5C3A"
+            android:pathData="M46,78 L46,64 C46,59 62,59 62,64 L62,78 Z" />
+        <!-- Left Minaret -->
+        <path
+            android:fillColor="#D8A84E"
+            android:pathData="M18,36 L24,38 L24,78 L18,78 Z" />
+        <path
+            android:fillColor="#F6E09E"
+            android:pathData="M21,26 L24,34 L18,34 Z" />
+        <!-- Right Minaret -->
+        <path
+            android:fillColor="#D8A84E"
+            android:pathData="M84,38 L90,36 L90,78 L84,78 Z" />
+        <path
+            android:fillColor="#F6E09E"
+            android:pathData="M87,26 L90,34 L84,34 Z" />
+        <!-- Central Main Dome -->
+        <path
+            android:fillColor="#FFD54F"
+            android:pathData="M54,26 C68,26 76,40 76,54 L32,54 C32,40 40,26 54,26 Z" />
+        <!-- Crescent Top Finial -->
+        <path
+            android:fillColor="#FFE082"
+            android:pathData="M54,16 L54,26 M51,18 C55,18 57,15 57,12 C53,12 51,15 51,18 Z" />
+        <!-- Clock Accent Circle -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,42 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+        <!-- Clock Hands -->
+        <path
+            android:strokeColor="#06281D"
+            android:strokeWidth="1.5"
+            android:strokeLineCap="round"
+            android:pathData="M54,42 L54,38 M54,42 L57,44" />
+    </group>
+</vector>

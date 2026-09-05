@@ -1,0 +1,177 @@
+═══════════════════════════════════════════════════════════
+    MASJIDKU-TV v1.0 - PANDUAN INSTALASI CEPAT
+═══════════════════════════════════════════════════════════
+
+📱 FILE APK:
+   MasjidKU-TV_v1.0_20260827_145014.apk
+   Ukuran: 21.76 MB
+
+📍 LOKASI:
+   C:\Users\DELL\antigravity\MasjidKU-TV\
+
+═══════════════════════════════════════════════════════════
+
+🚀 CARA INSTALL (Pilih salah satu):
+
+─────────────────────────────────────────────────────────
+METHOD 1: Install Langsung di Device Android
+─────────────────────────────────────────────────────────
+1. Copy file APK ke device Android Anda
+   (via USB, Bluetooth, email, atau cloud storage)
+
+2. Buka File Manager di device Android
+
+3. Cari dan tap file: MasjidKU-TV_v1.0_20260827_145014.apk
+
+4. Jika muncul peringatan:
+   - Enable "Install from Unknown Sources"
+   - Atau "Allow from this source"
+
+5. Tap "Install" dan tunggu sampai selesai
+
+6. Tap "Open" untuk membuka aplikasi
+
+─────────────────────────────────────────────────────────
+METHOD 2: Install via ADB (untuk yang familiar)
+─────────────────────────────────────────────────────────
+1. Enable USB Debugging di device:
+   Settings → Developer Options → USB Debugging
+
+2. Connect device ke komputer via USB
+
+3. Buka Command Prompt/Terminal
+
+4. Jalankan command:
+   adb install MasjidKU-TV_v1.0_20260827_145014.apk
+
+5. Tunggu sampai muncul "Success"
+
+6. Buka aplikasi di device
+
+═══════════════════════════════════════════════════════════
+
+⚙️ SETUP AWAL SETELAH INSTALL:
+
+1. BUKA APLIKASI
+   - Aplikasi otomatis tampil dalam mode TV
+
+2. AKSES SETTINGS
+   - Tap icon ⚙️ (gear) di pojok kanan atas
+   - Atau tekan tombol Menu di remote TV Box
+
+3. KONFIGURASI DASAR
+   Tab "Pengaturan":
+   ✓ Pilih Model Tampilan (1-6)
+   ✓ Nama Masjid
+   ✓ Kota (untuk jadwal sholat)
+   ✓ Info Bank (untuk infaq)
+
+   Tab "Petugas Jum'at":
+   ✓ Nama Khatib
+   ✓ Nama Imam
+   ✓ Nama Muadzin
+   ✓ Nama Bilal
+   ✓ Tema Khutbah
+
+   Tab "Keuangan":
+   ✓ Input transaksi pemasukan
+   ✓ Input transaksi pengeluaran
+
+   Tab "Running Text":
+   ✓ Tambah berita/pengumuman
+
+4. REMOTE CONTROL (Optional)
+   - Scan QR Code di Settings
+   - Akses via browser HP
+   - Kontrol dari jarak jauh
+
+═══════════════════════════════════════════════════════════
+
+📋 SPESIFIKASI MINIMUM:
+
+✓ Android 8.0 (Oreo) atau lebih tinggi
+✓ RAM minimal 2GB (rekomendasi 4GB)
+✓ Storage minimal 100MB
+✓ WiFi untuk remote control (optional)
+
+═══════════════════════════════════════════════════════════
+
+🎯 REKOMENDASI DEVICE:
+
+✓ TV Box: Xiaomi Mi Box, Nvidia Shield
+✓ Fire TV Stick: Amazon Fire TV 4K
+✓ Smart TV: Samsung/LG/Sony Android TV
+✓ Tablet: 10 inch ke atas
+
+═══════════════════════════════════════════════════════════
+
+🎨 6 MODEL TAMPILAN TERSEDIA:
+
+1. SPLIT_DASHBOARD - Panel kiri & kanan
+2. DUAL_INFO_COMPACT - Compact dual info
+3. CAROUSEL_BOTTOM - Carousel + prayer bar
+4. SIDEBAR_ANALOG_NEO - Cyber modern + analog clock
+5. RIGHT_WAVE_ANALOG - Wave elegan + analog clock
+6. WAKTIHA_KLATEN - Klasik + 7 bar horizontal
+
+Pilih sesuai selera masjid Anda!
+
+═══════════════════════════════════════════════════════════
+
+✨ FITUR UTAMA:
+
+✓ Waktu Sholat otomatis dengan countdown
+✓ Petugas Jumatan (Khatib, Imam, Muadzin, Bilal)
+✓ Laporan Keuangan transparan (Saldo, In, Out)
+✓ Kegiatan & Kajian masjid
+✓ Running Text berita
+✓ Media Slideshow untuk poster
+✓ Adzan otomatis
+✓ Remote control via web
+✓ QR Code untuk akses mudah
+
+═══════════════════════════════════════════════════════════
+
+❓ TROUBLESHOOTING:
+
+Problem: Aplikasi force close
+Solution:
+- Clear cache: Settings → Apps → MasjidKU-TV → Clear Cache
+- Clear data: Settings → Apps → MasjidKU-TV → Clear Data
+- Reinstall aplikasi
+
+Problem: Remote control tidak connect
+Solution:
+- Pastikan device & HP di WiFi yang sama
+- Cek firewall tidak block port 8080
+- Restart aplikasi
+- Scan ulang QR Code
+
+Problem: Jadwal sholat tidak akurat
+Solution:
+- Pastikan kota sudah dipilih dengan benar
+- Cek metode perhitungan di Settings
+- Restart aplikasi untuk refresh data
+
+═══════════════════════════════════════════════════════════
+
+📞 SUPPORT:
+
+Untuk bantuan lebih lanjut, lihat:
+- RELEASE_NOTES.md (dokumentasi lengkap)
+- PERBAIKAN_TAMPILAN.md (detail UI improvements)
+
+═══════════════════════════════════════════════════════════
+
+🤲 JAZAKUMULLAH KHAIRAN
+
+Semoga aplikasi ini bermanfaat untuk masjid dan jama'ah.
+Barakallahu fiikum!
+
+═══════════════════════════════════════════════════════════
+
+Build: v1.0 - 27 Agustus 2026
+Size: 21.76 MB
+Type: Debug APK
+
+═══════════════════════════════════════════════════════════

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kebijakan Privasi - MasjidKU TV</title>
+    <style>
+        :root {
+            --primary: #047857;
+            --primary-dark: #064e3b;
+            --accent: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #022018 0%, #064e3b 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 4px solid var(--accent);
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            letter-spacing: 0.5px;
+        }
+        .header p {
+            margin: 0;
+            color: #fde68a;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px 60px 20px;
+        }
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        h2 {
+            color: var(--primary-dark);
+            border-bottom: 2px solid #ecfdf5;
+            padding-bottom: 8px;
+            margin-top: 24px;
+            font-size: 20px;
+        }
+        h3 {
+            color: var(--primary);
+            font-size: 16px;
+            margin-top: 18px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        th {
+            background-color: #f0fdf4;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        .badge {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🕌 Kebijakan Privasi (Privacy Policy)</h1>
+        <p>Aplikasi Digital Signage & Jadwal Sholat TV — <strong>MasjidKU TV</strong></p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <p><strong>Terakhir Diperbarui:</strong> 30 Agustus 2026<br>
+            <strong>Aplikasi:</strong> MasjidKU TV<br>
+            <strong>Pengembang:</strong> Tim DKM Digital Signage MasjidKU</p>
+
+            <h2>1. Komitmen Privasi & Prinsip Zero Tracking</h2>
+            <p>Aplikasi <strong>MasjidKU TV</strong> berkomitmen penuh menjaga privasi pengurus DKM dan jamaah masjid. Aplikasi ini dirancang dengan prinsip <span class="badge">100% Bebas Pelacakan (Zero Tracking)</span> dan <span class="badge">Penyimpanan Lokal (Local Storage)</span>.</p>
+            <p><strong>Kami TIDAK mengumpulkan, merekam, memperjualbelikan, atau membagikan informasi data pribadi pengguna ke server pihak ketiga mana pun.</strong></p>
+
+            <h2>2. Informasi & Data yang Digunakan</h2>
+            <h3>A. Data Konfigurasi Masjid & Keuangan</h3>
+            <p>Seluruh data masjid (Nama Masjid, Jadwal Sholat, Petugas Sholat Jum'at, Laporan Saldo Kas Keuangan, dan Teks Maklumat) <strong>hanya disimpan secara lokal</strong> di memori internal perangkat TV Anda melalui SQLite/Room Database Android. Data tidak pernah diunggah ke internet publik.</p>
+
+            <h3>B. Gambar QRIS Infaq & Logo</h3>
+            <p>Gambar kode QRIS infaq yang diunggah pengurus melalui remote HP disimpan secara offline di media internal aplikasi TV dan hanya digunakan untuk keperluan tampilan donasi jamaah di layar TV tersebut.</p>
+
+            <h3>C. Lokasi Koordinat Sholat</h3>
+            <p>Koordinat lintang dan bujur kota yang Anda pilih digunakan secara lokal oleh rumus hisab astronomi untuk menentukan jadwal sholat yang akurat. Kami tidak melacak lokasi fisik perangkat TV Anda.</p>
+
+            <h2>3. Izin Akses Perangkat (Permissions)</h2>
+            <table>
+                <tr>
+                    <th>Izin (Permission)</th>
+                    <th>Tujuan Penggunaan</th>
+                </tr>
+                <tr>
+                    <td><code>android.permission.INTERNET</code></td>
+                    <td>Mengambil sinkronisasi jadwal sholat resmi dari API Kemenag RI serta menjalankan server lokal untuk remote control HP.</td>
+                </tr>
+                <tr>
+                    <td><code>android.permission.ACCESS_NETWORK_STATE</code></td>
+                    <td>Mengecek koneksi jaringan Wi-Fi lokal.</td>
+                </tr>
+                <tr>
+                    <td><code>android.permission.ACCESS_WIFI_STATE</code></td>
+                    <td>Menampilkan alamat IP lokal TV (contoh: <code>192.168.1.15:8080</code>) agar pengurus dapat menghubungkan Web Remote HP.</td>
+                </tr>
+                <tr>
+                    <td><code>android.permission.WAKE_LOCK</code></td>
+                    <td>Menjaga layar TV tetap aktif menyala selama jam operasional masjid.</td>
+                </tr>
+            </table>
+
+            <h2>4. Fitur Web Remote Smartphone (Jaringan Lokal)</h2>
+            <p>Fitur Web Remote menggunakan server HTTP internal di dalam TV yang <strong>hanya dapat diakses melalui jaringan Wi-Fi lokal yang sama</strong>. Tidak ada koneksi yang diteruskan ke server luar atau internet publik.</p>
+
+            <h2>5. Bebas Iklan & Pelacak Pihak Ketiga</h2>
+            <p>Aplikasi MasjidKU TV <strong>100% bebas dari iklan komersial</strong> (tanpa Google AdMob, Unity Ads, atau analitik pihak ketiga) demi menjaga kekhusyukan dan kenyamanan ibadah di rumah ibadah.</p>
+
+            <h2>6. Kontak Pengembang</h2>
+            <p>Jika ada pertanyaan atau saran terkait privasi aplikasi MasjidKU TV, silakan hubungi tim kami:<br>
+            Email: <strong>support@masjidku.id</strong> / <strong>dkm@masjidku.id</strong></p>
+        </div>
+
+        <div class="footer">
+            &copy; 2026 MasjidKU TV. All rights reserved.
+        </div>
+    </div>
+
+</body>
+</html>

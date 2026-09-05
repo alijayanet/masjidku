@@ -219,7 +219,7 @@ class LocalHttpServer(
                 val corsHeaders = "HTTP/1.1 200 OK\r\n" +
                         "Access-Control-Allow-Origin: *\r\n" +
                         "Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE\r\n" +
-                        "Access-Control-Allow-Headers: Authorization, X-Auth-Token, Content-Type, Accept, Origin\r\n" +
+                        "Access-Control-Allow-Headers: *\r\n" +
                         "Access-Control-Max-Age: 86400\r\n" +
                         "Content-Length: 0\r\n" +
                         "Connection: close\r\n\r\n"
@@ -748,7 +748,7 @@ class LocalHttpServer(
                 "Content-Length: ${data.size}\r\n" +
                 "Access-Control-Allow-Origin: *\r\n" +
                 "Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE\r\n" +
-                "Access-Control-Allow-Headers: Authorization, X-Auth-Token, Content-Type, Accept, Origin\r\n" +
+                "Access-Control-Allow-Headers: *\r\n" +
                 "Connection: close\r\n\r\n"
         output.write(header.toByteArray(StandardCharsets.UTF_8))
         output.write(data)
@@ -875,22 +875,26 @@ class LocalHttpServer(
             ?: headers["x-audio-size"]?.toLongOrNull()?.takeIf { it > 0L }
             ?: contentLength.toLong()
 
-        val allowedExts = setOf("mp3", "wav", "m4a", "ogg", "aac", "flac")
+        val allowedExts = setOf("mp3", "wav", "m4a", "ogg", "aac", "flac", "opus", "3gp", "amr", "mp4", "mkv", "webm", "wma", "mid", "midi")
         if (ext !in allowedExts) {
-            return "{\"status\":\"error\",\"message\":\"Format tidak didukung. Gunakan MP3, WAV, M4A, atau OGG.\"}"
+            val errJson = JSONObject()
+            errJson.put("status", "error")
+            errJson.put("message", "Format audio (.$ext) tidak didukung. Gunakan MP3, WAV, M4A, OGG, AAC, atau FLAC.")
+            return errJson.toString()
         }
 
         val murottalDir = context?.filesDir?.resolve("murottal") ?: File(System.getProperty("java.io.tmpdir"), "murottal")
         if (!murottalDir.exists()) murottalDir.mkdirs()
 
-        val fileName = "murottal_${System.currentTimeMillis()}.$ext"
+        val cleanTitle = (surahParam ?: titleParam ?: "murottal_${System.currentTimeMillis()}").replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val fileName = "${cleanTitle}_${System.currentTimeMillis()}.$ext"
         val targetFile = File(murottalDir, fileName)
 
         var totalWritten = 0L
         val maxAllowedSize = 130L * 1024L * 1024L // 130 MB max
         try {
             var remaining = if (expectedSize > 0L) expectedSize else -1L
-            val buffer = ByteArray(32768)
+            val buffer = ByteArray(65536)
             FileOutputStream(targetFile).use { fos ->
                 while (remaining != 0L) {
                     val toRead = if (remaining > 0L) minOf(remaining, buffer.size.toLong()).toInt() else buffer.size
@@ -905,7 +909,10 @@ class LocalHttpServer(
                         if (totalWritten > maxAllowedSize) {
                             fos.close()
                             targetFile.delete()
-                            return "{\"status\":\"error\",\"message\":\"Ukuran audio melebihi batas maksimal (120 MB)\"}"
+                            val errJson = JSONObject()
+                            errJson.put("status", "error")
+                            errJson.put("message", "Ukuran audio melebihi batas maksimal (120 MB)")
+                            return errJson.toString()
                         }
                     }
                 }
@@ -913,7 +920,10 @@ class LocalHttpServer(
             }
 
             if (!targetFile.exists() || targetFile.length() == 0L || totalWritten == 0L) {
-                return "{\"status\":\"error\",\"message\":\"File audio kosong atau gagal diterima dari HP\"}"
+                val errJson = JSONObject()
+                errJson.put("status", "error")
+                errJson.put("message", "File audio kosong atau gagal diterima dari HP")
+                return errJson.toString()
             }
 
             // Extract audio duration using MediaMetadataRetriever
@@ -945,12 +955,20 @@ class LocalHttpServer(
             repository.setDefaultMurottalAudio(id)
 
             val sizeMb = String.format(java.util.Locale.US, "%.2f", totalWritten / (1024.0 * 1024.0))
-            return "{\"status\":\"ok\",\"message\":\"File audio murottal berhasil diunggah ($sizeMb MB) dan langsung diaktifkan di TV!\",\"id\":$id,\"path\":\"/media/murottal/$fileName\"}"
+            val resJson = JSONObject()
+            resJson.put("status", "ok")
+            resJson.put("message", "File audio murottal berhasil diunggah ($sizeMb MB) dan langsung diaktifkan di TV!")
+            resJson.put("id", id)
+            resJson.put("path", "/media/murottal/$fileName")
+            return resJson.toString()
         } catch (t: Throwable) {
             try {
                 if (targetFile.exists()) targetFile.delete()
             } catch (_: Throwable) {}
-            return "{\"status\":\"error\",\"message\":\"Gagal menyimpan audio: ${t.localizedMessage ?: "Error I/O"}\"}"
+            val errJson = JSONObject()
+            errJson.put("status", "error")
+            errJson.put("message", "Gagal menyimpan audio: ${t.localizedMessage ?: "Error I/O"}")
+            return errJson.toString()
         }
     }
 
@@ -5725,7 +5743,7 @@ class LocalHttpServer(
                 e.stopPropagation();
             }
             const fileInput = document.getElementById('uploadMurottalFile');
-            if (!fileInput.files || fileInput.files.length === 0) {
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
                 alert('Silakan pilih file audio (MP3 / WAV / M4A) terlebih dahulu!');
                 return false;
             }
@@ -5757,7 +5775,10 @@ class LocalHttpServer(
             if (progressFill) progressFill.style.width = '0%';
 
             const token = localStorage.getItem('masjidku_session_token') || '';
-            const ext = file.name.split('.').pop().toLowerCase() || 'mp3';
+            let ext = 'mp3';
+            if (file.name && file.name.includes('.')) {
+                ext = file.name.split('.').pop().toLowerCase().trim() || 'mp3';
+            }
             const uploadUrl = '/api/upload-murottal?title=' + encodeURIComponent(surah + ' (' + qari + ')') +
                 '&surah=' + encodeURIComponent(surah) +
                 '&qari=' + encodeURIComponent(qari) +
@@ -5785,50 +5806,14 @@ class LocalHttpServer(
                 if (fInfo) fInfo.style.display = 'none';
                 const sInput = document.getElementById('uploadMurottalSurah');
                 if (sInput) sInput.value = '';
+                setMurottalSource('MANUAL_UPLOAD');
                 loadStatus();
-            }
-
-            // Fallback via _nativeFetch if XHR encounters network drop
-            async function tryFetchUpload() {
-                try {
-                    if (progressText) progressText.innerText = 'Mencoba mode cadangan langsung...';
-                    const headers = {
-                        'Content-Type': 'application/octet-stream',
-                        'X-Audio-Title': encodeURIComponent(surah + ' (' + qari + ')'),
-                        'X-Audio-Surah': encodeURIComponent(surah),
-                        'X-Audio-Qari': encodeURIComponent(qari),
-                        'X-Audio-Prayer': encodeURIComponent(prayer),
-                        'X-Audio-Ext': encodeURIComponent(ext),
-                        'X-Audio-Size': String(file.size)
-                    };
-                    if (token) {
-                        headers['Authorization'] = 'Bearer ' + token;
-                        headers['X-Auth-Token'] = token;
-                    }
-                    const res = await _nativeFetch(uploadUrl, {
-                        method: 'POST',
-                        headers: headers,
-                        body: file
-                    });
-                    const resData = await res.json();
-                    if (resData.status === 'ok') {
-                        handleSuccess(resData.message);
-                    } else {
-                        cleanupUI();
-                        alert('Gagal: ' + (resData.message || 'Gagal menyimpan audio'));
-                    }
-                } catch(err) {
-                    cleanupUI();
-                    console.error('Fetch upload error:', err);
-                    alert('Gagal mengunggah file audio ke TV: ' + (err.message || 'Pastikan HP dan TV tersambung WiFi yang sama.'));
-                }
             }
 
             // Primary upload via XMLHttpRequest with real-time percentage progress
             const xhr = new XMLHttpRequest();
             xhr.open('POST', uploadUrl, true);
             xhr.timeout = 600000; // 10 menit
-            xhr.setRequestHeader('Content-Type', 'application/octet-stream');
             if (token) {
                 xhr.setRequestHeader('Authorization', 'Bearer ' + token);
                 xhr.setRequestHeader('X-Auth-Token', token);
@@ -5869,14 +5854,14 @@ class LocalHttpServer(
                     alert('Sesi login berakhir. Silakan masukkan PIN kembali.');
                     showLoginSection();
                 } else {
-                    console.warn('XHR failed with status ' + xhr.status + ', trying fallback fetch...');
-                    tryFetchUpload();
+                    cleanupUI();
+                    alert('Gagal mengunggah audio ke TV (HTTP ' + xhr.status + '). Pastikan HP dan TV tersambung WiFi yang sama.');
                 }
             };
 
             xhr.onerror = function() {
-                console.warn('XHR network error, trying fallback fetch...');
-                tryFetchUpload();
+                cleanupUI();
+                alert('Gagal mengunggah file audio ke TV. Pastikan HP dan TV tersambung WiFi yang sama.');
             };
 
             xhr.ontimeout = function() {
@@ -5887,8 +5872,9 @@ class LocalHttpServer(
             try {
                 xhr.send(file);
             } catch (err) {
-                console.warn('XHR send failed, using fallback fetch:', err);
-                tryFetchUpload();
+                cleanupUI();
+                console.error('XHR send error:', err);
+                alert('Gagal mengirim audio: ' + err.message);
             }
             return false;
         }

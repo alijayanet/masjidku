@@ -47,15 +47,20 @@ fun RunningTextTicker(
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
 
-    // Accurately measure the full single-line text width in pixels without any bounding constraints
-    val measuredWidthPx = remember(fullText, fontSize, density) {
+    val textStyle = remember(fontSize) {
+        TextStyle(
+            fontSize = fontSize.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.3.sp,
+            color = SleekEmerald200
+        )
+    }
+
+    // Accurately measure the single-cycle text width in pixels
+    val measuredWidthPx = remember(fullText, textStyle, density) {
         val layoutResult = textMeasurer.measure(
             text = AnnotatedString(fullText),
-            style = TextStyle(
-                fontSize = fontSize.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.3.sp
-            ),
+            style = textStyle,
             maxLines = 1,
             softWrap = false
         )
@@ -63,27 +68,26 @@ fun RunningTextTicker(
     }
 
     var containerWidthPx by remember { mutableStateOf(0) }
-    var positionedWidthPx by remember { mutableStateOf(0) }
+    val effectiveTextWidthPx = measuredWidthPx.coerceAtLeast(100)
 
-    val effectiveTextWidthPx = maxOf(measuredWidthPx, positionedWidthPx)
-
-    val totalDistance = remember(containerWidthPx, effectiveTextWidthPx) {
+    // Calculate how many copies are needed to guarantee a seamless, infinite, zero-gap flow
+    val copyCount = remember(containerWidthPx, effectiveTextWidthPx) {
         if (containerWidthPx > 0 && effectiveTextWidthPx > 0) {
-            containerWidthPx + effectiveTextWidthPx
-        } else 0
+            (containerWidthPx / effectiveTextWidthPx) + 2
+        } else {
+            2
+        }
     }
 
-    // Animation duration proportional to text length (constant smooth speed ~70 px/s for TV viewing)
-    val durationMs = remember(totalDistance) {
-        val speedFactor = 70f // pixels per second
-        if (totalDistance > 0) {
-            ((totalDistance / speedFactor) * 1000).toInt().coerceAtLeast(8000)
-        } else 20000
+    // Animation duration for exactly 1 full cycle of effectiveTextWidthPx (smooth speed ~65 px/s)
+    val durationMs = remember(effectiveTextWidthPx) {
+        val speedFactor = 65f // pixels per second
+        ((effectiveTextWidthPx / speedFactor) * 1000).toInt().coerceAtLeast(3000)
     }
 
     val transition = rememberInfiniteTransition(label = "ticker_trans")
     val animatedOffsetPx by transition.animateFloat(
-        initialValue = containerWidthPx.toFloat(),
+        initialValue = 0f,
         targetValue = -effectiveTextWidthPx.toFloat(),
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = durationMs, easing = LinearEasing),
@@ -124,7 +128,7 @@ fun RunningTextTicker(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Running Text Content Container
+        // Running Text Content Container (Seamless Infinite Zero-Gap Marquee)
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -133,33 +137,39 @@ fun RunningTextTicker(
                 .onSizeChanged { containerWidthPx = it.width },
             contentAlignment = Alignment.CenterStart
         ) {
-            Text(
-                text = fullText,
-                fontSize = fontSize.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = SleekEmerald200,
-                maxLines = 1,
-                softWrap = false,
-                letterSpacing = 0.3.sp,
-                modifier = Modifier
-                    .layout { measurable, constraints ->
-                        // Force unconstrained infinite width during measurement
-                        val placeable = measurable.measure(
-                            constraints.copy(
-                                minWidth = 0,
-                                maxWidth = Constraints.Infinity
-                            )
-                        )
-                        layout(placeable.width, placeable.height) {
-                            placeable.placeRelative(0, 0)
-                        }
-                    }
-                    .wrapContentWidth(align = Alignment.Start, unbounded = true)
-                    .onGloballyPositioned { positionedWidthPx = it.size.width }
-                    .offset {
-                        IntOffset(x = animatedOffsetPx.toInt(), y = 0)
-                    }
-            )
+            if (containerWidthPx > 0 && effectiveTextWidthPx > 0) {
+                for (i in 0 until copyCount) {
+                    val offsetX = animatedOffsetPx + (i * effectiveTextWidthPx)
+                    Text(
+                        text = fullText,
+                        style = textStyle,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(
+                                    constraints.copy(
+                                        minWidth = 0,
+                                        maxWidth = Constraints.Infinity
+                                    )
+                                )
+                                layout(placeable.width, placeable.height) {
+                                    placeable.placeRelative(0, 0)
+                                }
+                            }
+                            .offset {
+                                IntOffset(x = offsetX.toInt(), y = 0)
+                            }
+                    )
+                }
+            } else {
+                Text(
+                    text = fullText,
+                    style = textStyle,
+                    maxLines = 1,
+                    softWrap = false
+                )
+            }
         }
     }
 }

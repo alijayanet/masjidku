@@ -177,3 +177,30 @@ interface MurottalAudioDao {
     suspend fun setDefaultById(id: Long)
 }
 
+@Dao
+interface TarawihScheduleDao {
+    @Query("SELECT * FROM tarawih_schedules ORDER BY night ASC")
+    fun getAllSchedulesFlow(): Flow<List<TarawihScheduleEntity>>
+
+    @Query("SELECT * FROM tarawih_schedules ORDER BY night ASC")
+    suspend fun getAllSchedules(): List<TarawihScheduleEntity>
+
+    @Query("SELECT * FROM tarawih_schedules WHERE night = :night LIMIT 1")
+    suspend fun getScheduleByNight(night: Int): TarawihScheduleEntity?
+
+    @Query("SELECT * FROM tarawih_schedules WHERE night = :night LIMIT 1")
+    fun getScheduleByNightFlow(night: Int): Flow<TarawihScheduleEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(schedule: TarawihScheduleEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(schedules: List<TarawihScheduleEntity>)
+
+    @Query("DELETE FROM tarawih_schedules WHERE night = :night")
+    suspend fun deleteByNight(night: Int)
+
+    @Query("DELETE FROM tarawih_schedules")
+    suspend fun deleteAll()
+}
+

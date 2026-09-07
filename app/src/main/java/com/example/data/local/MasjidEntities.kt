@@ -29,9 +29,32 @@ data class MosqueConfigEntity(
     val offsetIsya: Int = 2,
     val iqomahSubuh: Int = 10,
     val iqomahDzuhur: Int = 10,
+    val iqomahJumat: Int = 15,
     val iqomahAshar: Int = 10,
     val iqomahMaghrib: Int = 7,
     val iqomahIsya: Int = 10,
+    val idulFitriEnabled: Boolean = false,
+    val idulFitriDate: String = "",
+    val idulFitriTime: String = "06:30",
+    val idulFitriIqomahMinutes: Int = 15,
+    val idulFitriSholatMinutes: Int = 20,
+    val idulAdhaEnabled: Boolean = false,
+    val idulAdhaDate: String = "",
+    val idulAdhaTime: String = "06:30",
+    val idulAdhaIqomahMinutes: Int = 15,
+    val idulAdhaSholatMinutes: Int = 20,
+    val tarawihEnabled: Boolean = false,
+    val tarawihAutoDetectNight: Boolean = true,
+    val tarawihManualNight: Int = 1,
+    val tarawihShowSlide: Boolean = true,
+    val tarawihKultumMinutes: Int = 15,
+    val tarawihSholatMinutes: Int = 45,
+    val tarawihTitleText: String = "JADWAL PETUGAS SHOLAT TARAWIH & KULTUM",
+    val tarawihTitleColor: String = "#FFD700",
+    val tarawihOfficerNameColor: String = "#FFFFFF",
+    val tarawihOfficerLabelColor: String = "#38BDF8",
+    val tarawihBgPreset: String = "PRESET_EMERALD_MIHRAB",
+    val customTarawihBgPath: String = "",
     val sholatDurationMinutes: Int = 10,
     val hijriAdjustmentDays: Int = 0,
     val activeTheme: String = "EMERALD_GOLD",
@@ -269,5 +292,21 @@ data class MurottalAudioEntity(
     val prayerTime: String = "ALL", // "ALL", "SUBUH", "DZUHUR", "ASHAR", "MAGHRIB", "ISYA", "JUMAT"
     val isDefault: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "tarawih_schedules")
+data class TarawihScheduleEntity(
+    @PrimaryKey val night: Int = 1, // 1 to 30
+    val date: String = "",
+    val penceramah: String = "",
+    val penceramahPhone: String = "",
+    val judulKultum: String = "",
+    val imamTarawih: String = "",
+    val imamTarawihPhone: String = "",
+    val imamWitir: String = "",
+    val imamWitirPhone: String = "",
+    val bilalTarawih: String = "",
+    val bilalTarawihPhone: String = "",
+    val notes: String = ""
 )
 

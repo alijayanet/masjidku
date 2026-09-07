@@ -26,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
@@ -39,6 +40,179 @@ import androidx.compose.ui.layout.ContentScale
 import com.example.data.model.BackgroundPresetHelper
 import com.example.data.model.MosqueConfig
 import java.io.File
+
+// ----------------------------------------------------
+// RESPONSIVE PRAYER OFFICER BADGES (2-BARIS / MULTI-KOLOM)
+// ----------------------------------------------------
+private data class PrayerOfficerBadgeInfo(
+    val icon: String,
+    val roleTitle: String,
+    val name: String,
+    val borderColor: Color,
+    val titleColor: Color
+)
+
+@Composable
+fun PrayerOfficersBadges(
+    imamName: String = "",
+    muadzinName: String = "",
+    khotibName: String = "",
+    bilalName: String = "",
+    isFridayDzuhur: Boolean = false,
+    isHariRaya: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    val badges = remember(imamName, muadzinName, khotibName, bilalName, isFridayDzuhur, isHariRaya) {
+        val list = mutableListOf<PrayerOfficerBadgeInfo>()
+
+        if ((isFridayDzuhur || isHariRaya) && khotibName.isNotBlank()) {
+            list.add(
+                PrayerOfficerBadgeInfo(
+                    icon = "🎙️",
+                    roleTitle = if (isHariRaya) "KHOTIB HARI RAYA:" else "KHOTIB JUM'AT:",
+                    name = khotibName,
+                    borderColor = SleekAmber400.copy(alpha = 0.85f),
+                    titleColor = SleekAmber300
+                )
+            )
+        }
+
+        if (imamName.isNotBlank()) {
+            list.add(
+                PrayerOfficerBadgeInfo(
+                    icon = "👳",
+                    roleTitle = if (isHariRaya) "IMAM SHOLAT IED:" else "IMAM SHOLAT:",
+                    name = imamName,
+                    borderColor = SleekEmerald400.copy(alpha = 0.85f),
+                    titleColor = SleekEmerald300
+                )
+            )
+        }
+
+        if (muadzinName.isNotBlank()) {
+            list.add(
+                PrayerOfficerBadgeInfo(
+                    icon = if (isHariRaya) "🌙" else "📢",
+                    roleTitle = if (isHariRaya) "PEMANDU TAKBIR:" else "MUADZIN:",
+                    name = muadzinName,
+                    borderColor = Color(0x9934D399),
+                    titleColor = SleekEmerald300
+                )
+            )
+        }
+
+        if ((isFridayDzuhur || isHariRaya) && bilalName.isNotBlank()) {
+            list.add(
+                PrayerOfficerBadgeInfo(
+                    icon = "📜",
+                    roleTitle = if (isHariRaya) "BILAL / PROTOKOL:" else "BILAL:",
+                    name = bilalName,
+                    borderColor = Color(0x9934D399),
+                    titleColor = SleekEmerald300
+                )
+            )
+        }
+
+        list
+    }
+
+    if (badges.isEmpty()) return
+
+    if (badges.size <= 2) {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            badges.forEach { badge ->
+                OfficerBadgeCardItem(
+                    badge = badge,
+                    modifier = Modifier.widthIn(min = 260.dp, max = 380.dp)
+                )
+            }
+        }
+    } else {
+        // 2 Baris x 2 Kolom untuk responsive nama panjang di TV
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                badges.take(2).forEach { badge ->
+                    OfficerBadgeCardItem(
+                        badge = badge,
+                        modifier = Modifier.widthIn(min = 280.dp, max = 400.dp)
+                    )
+                }
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                badges.drop(2).forEach { badge ->
+                    OfficerBadgeCardItem(
+                        badge = badge,
+                        modifier = Modifier.widthIn(min = 280.dp, max = 400.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OfficerBadgeCardItem(
+    badge: PrayerOfficerBadgeInfo,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0x40000000))
+            .border(1.5.dp, badge.borderColor, RoundedCornerShape(14.dp))
+            .padding(horizontal = 18.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(badge.borderColor.copy(alpha = 0.15f))
+                .border(1.dp, badge.borderColor.copy(alpha = 0.35f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(badge.icon, fontSize = 20.sp)
+        }
+
+        Column(
+            modifier = Modifier.weight(1f, fill = false),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = badge.roleTitle,
+                fontSize = 11.sp,
+                color = badge.titleColor,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = badge.name,
+                fontSize = if (badge.name.length > 22) 17.sp else 20.sp,
+                fontWeight = FontWeight.Black,
+                color = TextWhite,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
 
 // ----------------------------------------------------
 // ----------------------------------------------------
@@ -66,8 +240,13 @@ fun PreAdhanCountdownOverlay(
     }
 
     val isUrgent = remainingSeconds in 1..10
-    val isFridayDzuhur = isFriday && prayerName == PrayerName.DZUHUR
-    val prayerTitle = if (isFridayDzuhur) "JUM'AT" else prayerName.displayName.uppercase()
+    val isHariRaya = prayerName == PrayerName.IDUL_FITRI || prayerName == PrayerName.IDUL_ADHA
+    val isFridayDzuhur = (isFriday && prayerName == PrayerName.DZUHUR) && !isHariRaya
+    val prayerTitle = when {
+        isHariRaya -> prayerName.displayName.uppercase()
+        isFridayDzuhur -> "JUM'AT"
+        else -> prayerName.displayName.uppercase()
+    }
 
     val customCountdownBitmap = remember(config?.customCountdownBgPath) {
         val path = config?.customCountdownBgPath.orEmpty()
@@ -148,7 +327,11 @@ fun PreAdhanCountdownOverlay(
                     .padding(horizontal = 24.dp, vertical = 7.dp)
             ) {
                 Text(
-                    text = if (isFridayDzuhur) "⏳ HITUNG MUNDUR MENJELANG SHOLAT JUM'AT" else "⏳ HITUNG MUNDUR MENJELANG WAKTU SHOLAT",
+                    text = when {
+                        isHariRaya -> "🌙 GEMA TAKBIR & PERSIAPAN $prayerTitle"
+                        isFridayDzuhur -> "⏳ HITUNG MUNDUR MENJELANG SHOLAT JUM'AT"
+                        else -> "⏳ HITUNG MUNDUR MENJELANG WAKTU SHOLAT"
+                    },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = SleekAmber300,
@@ -159,7 +342,7 @@ fun PreAdhanCountdownOverlay(
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "PERSIAPAN SHOLAT $prayerTitle",
+                text = if (isHariRaya) "PERSIAPAN $prayerTitle" else "PERSIAPAN SHOLAT $prayerTitle",
                 fontSize = 46.sp,
                 fontWeight = FontWeight.Black,
                 color = TextWhite,
@@ -208,85 +391,17 @@ fun PreAdhanCountdownOverlay(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Imam, Khotib, Muadzin, Bilal Badges (Lebar Maksimal & Font Jelas)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (isFridayDzuhur && khotibName.isNotBlank()) {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0x33000000))
-                            .border(1.5.dp, SleekAmber400.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
-                            .padding(horizontal = 22.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text("🎙️", fontSize = 24.sp)
-                        Column {
-                            Text("KHOTIB JUM'AT:", fontSize = 12.sp, color = SleekAmber300, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                            Text(khotibName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
-                        }
-                    }
-                }
-
-                if (imamName.isNotBlank()) {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0x33000000))
-                            .border(1.5.dp, SleekEmerald400.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
-                            .padding(horizontal = 22.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text("👳", fontSize = 24.sp)
-                        Column {
-                            Text("IMAM SHOLAT:", fontSize = 12.sp, color = SleekEmerald300, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                            Text(imamName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
-                        }
-                    }
-                }
-
-                if (muadzinName.isNotBlank()) {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0x33000000))
-                            .border(1.5.dp, Color(0x6634D399), RoundedCornerShape(16.dp))
-                            .padding(horizontal = 20.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text("📢", fontSize = 24.sp)
-                        Column {
-                            Text("MUADZIN:", fontSize = 12.sp, color = SleekEmerald300, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                            Text(muadzinName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
-                        }
-                    }
-                }
-
-                if (isFridayDzuhur && bilalName.isNotBlank()) {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0x33000000))
-                            .border(1.5.dp, Color(0x6634D399), RoundedCornerShape(16.dp))
-                            .padding(horizontal = 20.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text("📜", fontSize = 24.sp)
-                        Column {
-                            Text("BILAL:", fontSize = 12.sp, color = SleekEmerald300, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                            Text(bilalName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
-                        }
-                    }
-                }
-            }
+            // Imam, Khotib, Muadzin, Bilal Badges (Responsive 2 Baris / Multi Kolom)
+            PrayerOfficersBadges(
+                imamName = imamName,
+                muadzinName = muadzinName,
+                khotibName = khotibName,
+                bilalName = bilalName,
+                isFridayDzuhur = isFridayDzuhur,
+                isHariRaya = isHariRaya
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -299,7 +414,11 @@ fun PreAdhanCountdownOverlay(
                     .padding(horizontal = 28.dp, vertical = 9.dp)
             ) {
                 Text(
-                    text = if (isFridayDzuhur) "💧 Silakan mandi sunnah, berwudhu, memakai wewangian & mengisi shaf terdepan" else "💧 Silakan mengambil air wudhu & bersiap mengisi shaf terdepan",
+                    text = when {
+                        isHariRaya -> "🌸 Disunnahkan mandi hari raya, berwudhu, memakai pakaian terbaik & memperbanyak Takbir"
+                        isFridayDzuhur -> "💧 Silakan mandi sunnah, berwudhu, memakai wewangian & mengisi shaf terdepan"
+                        else -> "💧 Silakan mengambil air wudhu & bersiap mengisi shaf terdepan"
+                    },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = SleekEmerald200
@@ -334,8 +453,13 @@ fun AdhanOverlay(
         label = "glow_scale"
     )
 
-    val isFridayDzuhur = isFriday && prayerName == PrayerName.DZUHUR
-    val prayerTitle = if (isFridayDzuhur) "SHOLAT JUM'AT" else prayerName.displayName.uppercase()
+    val isHariRaya = prayerName == PrayerName.IDUL_FITRI || prayerName == PrayerName.IDUL_ADHA
+    val isFridayDzuhur = (isFriday && prayerName == PrayerName.DZUHUR) && !isHariRaya
+    val prayerTitle = when {
+        isHariRaya -> prayerName.displayName.uppercase()
+        isFridayDzuhur -> "SHOLAT JUM'AT"
+        else -> prayerName.displayName.uppercase()
+    }
 
     Box(
         modifier = modifier
@@ -392,7 +516,11 @@ fun AdhanOverlay(
             Spacer(modifier = Modifier.height(14.dp))
 
             Text(
-                text = if (isFridayDzuhur) "WAKTU SHOLAT JUM'AT TELAH TIBA" else "WAKTU SHOLAT TELAH TIBA",
+                text = when {
+                    isHariRaya -> "WAKTU PELAKSANAAN $prayerTitle TELAH TIBA"
+                    isFridayDzuhur -> "WAKTU SHOLAT JUM'AT TELAH TIBA"
+                    else -> "WAKTU SHOLAT TELAH TIBA"
+                },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = SleekEmerald300,
@@ -402,7 +530,7 @@ fun AdhanOverlay(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "ADZAN $prayerTitle BERKUMANDANG",
+                text = if (isHariRaya) "GEMA TAKBIR $prayerTitle BERKUMANDANG" else "ADZAN $prayerTitle BERKUMANDANG",
                 fontSize = 46.sp,
                 fontWeight = FontWeight.Black,
                 color = TextWhite,
@@ -412,79 +540,28 @@ fun AdhanOverlay(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Arabic Call to Prayer
+            // Arabic Call to Prayer / Takbiran
             Text(
-                text = "حَيَّ عَلَى الصَّلَاةِ • حَيَّ عَلَى الْفَلَاحِ",
+                text = if (isHariRaya) "اللهُ أَكْبَرُ اللهُ أَكْبَرُ • لَا إِلٰهَ إِلَّا اللهُ وَاللهُ أَكْبَرُ" else "حَيَّ عَلَى الصَّلَاةِ • حَيَّ عَلَى الْفَلَاحِ",
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 color = SleekAmber400,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Imam & Muadzin & Khotib Badges (Lebar & Jelas di TV)
-            if (imamName.isNotBlank() || muadzinName.isNotBlank() || (isFridayDzuhur && khotibName.isNotBlank())) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (isFridayDzuhur && khotibName.isNotBlank()) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0x33000000))
-                                .border(1.5.dp, SleekAmber400.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
-                                .padding(horizontal = 22.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text("🎙️", fontSize = 24.sp)
-                            Column {
-                                Text("KHOTIB JUM'AT:", fontSize = 12.sp, color = SleekAmber300, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                                Text(khotibName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
-                            }
-                        }
-                    }
+            // Imam & Muadzin & Khotib & Bilal Badges (Responsive 2 Baris / Multi Kolom)
+            PrayerOfficersBadges(
+                imamName = imamName,
+                muadzinName = muadzinName,
+                khotibName = khotibName,
+                bilalName = bilalName,
+                isFridayDzuhur = isFridayDzuhur,
+                isHariRaya = isHariRaya
+            )
 
-                    if (imamName.isNotBlank()) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0x33000000))
-                                .border(1.5.dp, SleekEmerald400.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
-                                .padding(horizontal = 22.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text("👳", fontSize = 24.sp)
-                            Column {
-                                Text("IMAM SHOLAT:", fontSize = 12.sp, color = SleekEmerald300, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                                Text(imamName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
-                            }
-                        }
-                    }
-
-                    if (muadzinName.isNotBlank()) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0x33000000))
-                                .border(1.5.dp, Color(0x6634D399), RoundedCornerShape(16.dp))
-                                .padding(horizontal = 20.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text("📢", fontSize = 24.sp)
-                            Column {
-                                Text("MUADZIN:", fontSize = 12.sp, color = SleekEmerald300, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                                Text(muadzinName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
-                            }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(14.dp))
-            }
+            Spacer(modifier = Modifier.height(14.dp))
 
             Box(
                 modifier = Modifier
@@ -494,7 +571,11 @@ fun AdhanOverlay(
                     .padding(horizontal = 28.dp, vertical = 9.dp)
             ) {
                 Text(
-                    text = if (isFridayDzuhur) "Mari mendengarkan adzan & khutbah Jum'at dengan khusyuk serta seksama" else "Mari menjawab seruan adzan & bersiap mendirikan sholat berjamaah",
+                    text = when {
+                        isHariRaya -> "Mari bersama-sama mengumandangkan takbir, tahmid & tahlil dengan penuh khusyuk"
+                        isFridayDzuhur -> "Mari mendengarkan adzan & khutbah Jum'at dengan khusyuk serta seksama"
+                        else -> "Mari menjawab seruan adzan & bersiap mendirikan sholat berjamaah"
+                    },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = SleekEmerald200
@@ -522,8 +603,13 @@ fun IqomahOverlay(
     val timeFormatted = String.format(java.util.Locale.getDefault(), "%02d:%02d", mins, secs)
 
     val isLastSeconds = remainingSeconds in 1..10
-    val isFridayDzuhur = isFriday && prayerName == PrayerName.DZUHUR
-    val prayerTitle = if (isFridayDzuhur) "JUM'AT" else prayerName.displayName.uppercase()
+    val isHariRaya = prayerName == PrayerName.IDUL_FITRI || prayerName == PrayerName.IDUL_ADHA
+    val isFridayDzuhur = (isFriday && prayerName == PrayerName.DZUHUR) && !isHariRaya
+    val prayerTitle = when {
+        isHariRaya -> prayerName.displayName.uppercase()
+        isFridayDzuhur -> "JUM'AT"
+        else -> prayerName.displayName.uppercase()
+    }
 
     val customCountdownBitmap = remember(config?.customCountdownBgPath) {
         val path = config?.customCountdownBgPath.orEmpty()
@@ -596,7 +682,7 @@ fun IqomahOverlay(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "HITUNG MUNDUR MENUJU IQOMAH",
+                text = if (isHariRaya) "HITUNG MUNDUR MENJELANG SHOLAT" else "HITUNG MUNDUR MENUJU IQOMAH",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = SleekEmerald300,
@@ -606,7 +692,7 @@ fun IqomahOverlay(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "SHOLAT $prayerTitle BERJAMAAH",
+                text = if (isHariRaya) "$prayerTitle BERJAMAAH" else "SHOLAT $prayerTitle BERJAMAAH",
                 fontSize = 42.sp,
                 fontWeight = FontWeight.Black,
                 color = TextWhite,
@@ -626,7 +712,13 @@ fun IqomahOverlay(
                 ) {
                     Text("👳", fontSize = 24.sp)
                     Column {
-                        Text("IMAM SHOLAT:", fontSize = 11.5.sp, color = SleekAmber300, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                        Text(
+                            text = if (isHariRaya) "IMAM SHOLAT IED:" else "IMAM SHOLAT:",
+                            fontSize = 11.5.sp,
+                            color = SleekAmber300,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
                         Text(imamName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
                     }
                 }
@@ -688,7 +780,12 @@ fun IqomahOverlay(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(Icons.Default.NotificationsActive, contentDescription = "Shaf", tint = SleekAmber400, modifier = Modifier.size(24.dp))
-                    Text("Luruskan dan Rapatkan Shaf Sholat", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+                    Text(
+                        text = if (isHariRaya) "Luruskan dan Rapatkan Shaf Sholat Ied" else "Luruskan dan Rapatkan Shaf Sholat",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextWhite
+                    )
                 }
             }
         }
@@ -711,8 +808,13 @@ fun SholatSilentOverlay(
     val secs = remainingSeconds % 60
     val timeFormatted = String.format(java.util.Locale.getDefault(), "%02d:%02d", mins, secs)
 
-    val isFridayDzuhur = isFriday && prayerName == PrayerName.DZUHUR
-    val prayerTitle = if (isFridayDzuhur) "JUM'AT" else prayerName.displayName.uppercase()
+    val isHariRaya = prayerName == PrayerName.IDUL_FITRI || prayerName == PrayerName.IDUL_ADHA
+    val isFridayDzuhur = (isFriday && prayerName == PrayerName.DZUHUR) && !isHariRaya
+    val prayerTitle = when {
+        isHariRaya -> prayerName.displayName.uppercase()
+        isFridayDzuhur -> "JUM'AT"
+        else -> prayerName.displayName.uppercase()
+    }
 
     Box(
         modifier = modifier
@@ -738,7 +840,7 @@ fun SholatSilentOverlay(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "SHOLAT $prayerTitle BERJAMAAH SEDANG BERLANGSUNG",
+                text = if (isHariRaya) "$prayerTitle & KHUTBAH SEDANG BERLANGSUNG" else "SHOLAT $prayerTitle BERJAMAAH SEDANG BERLANGSUNG",
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Black,
                 color = SleekEmerald400,
@@ -749,7 +851,7 @@ fun SholatSilentOverlay(
             if (imamName.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Imam: $imamName",
+                    text = if (isHariRaya) "Imam Sholat: $imamName" else "Imam: $imamName",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
                     color = SleekAmber300
@@ -759,7 +861,7 @@ fun SholatSilentOverlay(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "سَوُّوا صُفُوفَكُمْ فَإِنَّ تَسْوِيَةَ الصُّفُوفِ مِنْ إِقَامَةِ الصَّلَاةِ",
+                text = if (isHariRaya) "سَوُّوا صُفُوفَكُمْ وَاسْتَمِعُوا لِلْخُطْبَةِ رَحِمَكُمُ اللهُ" else "سَوُّوا صُفُوفَكُمْ فَإِنَّ تَسْوِيَةَ الصُّفُوفِ مِنْ إِقَامَةِ الصَّلَاةِ",
                 fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
                 color = SleekAmber300,
@@ -769,7 +871,7 @@ fun SholatSilentOverlay(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "“Luruskan shaf-shaf kalian, karena meluruskan shaf adalah bagian dari kesempurnaan sholat.”",
+                text = if (isHariRaya) "“Luruskan shaf, dirikan sholat dan dengarkan khutbah dengan khusyuk serta seksama.”" else "“Luruskan shaf-shaf kalian, karena meluruskan shaf adalah bagian dari kesempurnaan sholat.”",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
                 color = TextWhiteMuted,

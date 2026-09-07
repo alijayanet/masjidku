@@ -56,6 +56,7 @@ import java.io.File
 private sealed interface CarouselSlideItem {
     object FinancialReport : CarouselSlideItem
     object FridayOfficers : CarouselSlideItem
+    object TarawihOfficers : CarouselSlideItem
     object MosqueActivities : CarouselSlideItem
     object DailyMaklumat : CarouselSlideItem
     object QrisDonation : CarouselSlideItem
@@ -78,6 +79,8 @@ fun CarouselContainer(
     fridaySchedule: FridaySchedule,
     activities: List<MosqueActivity>,
     mediaSlides: List<MediaSlide> = emptyList(),
+    tarawihSchedule: TarawihSchedule? = null,
+    activeTarawihNight: Int = 1,
     modifier: Modifier = Modifier
 ) {
     if (config.youtubeLiveEnabled && config.youtubeLiveUrl.isNotBlank()) {
@@ -105,6 +108,9 @@ fun CarouselContainer(
     val activeSlides = remember(
         config.showFinancialReport,
         config.showFridayOfficers,
+        config.tarawihEnabled,
+        config.tarawihShowSlide,
+        tarawihSchedule,
         config.showActivities,
         config.showDailyMaklumat,
         config.showQrisCard,
@@ -123,6 +129,9 @@ fun CarouselContainer(
             if (config.showFridayOfficers) {
                 add(CarouselSlideItem.FridayOfficers)
             }
+            if (config.tarawihEnabled && config.tarawihShowSlide && tarawihSchedule != null) {
+                add(CarouselSlideItem.TarawihOfficers)
+            }
             if (config.showActivities) add(CarouselSlideItem.MosqueActivities)
             if (config.showDailyMaklumat) add(CarouselSlideItem.DailyMaklumat)
             if (config.showQrisCard) add(CarouselSlideItem.QrisDonation)
@@ -139,23 +148,16 @@ fun CarouselContainer(
 
     // Jika semua toggle dimatikan (activeSlides kosong), tampilkan MURNI background TV saja tanpa card apa pun!
     if (activeSlides.isEmpty()) {
-        Spacer(modifier = modifier.fillMaxSize())
         return
     }
 
     val safeIndex = slideIndex % activeSlides.size
     val currentSlide = activeSlides[safeIndex]
 
-    val cardAlpha = (1f - config.centerCardTransparency).coerceIn(0.15f, 0.92f)
-    val cardBgColor = Color(0x02, 0x2C, 0x22, (cardAlpha * 255).toInt())
-
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(22.dp))
-            .background(cardBgColor)
-            .border(1.dp, Color(0x33F59E0B), RoundedCornerShape(22.dp))
-            .padding(10.dp)
+            .clip(RoundedCornerShape(20.dp))
     ) {
         // Active Slide Content - Full Space
         AnimatedContent(
@@ -175,6 +177,11 @@ fun CarouselContainer(
                     config = config
                 )
                 is CarouselSlideItem.FridayOfficers -> SlideFridayOfficers(schedule = fridaySchedule, config = config)
+                is CarouselSlideItem.TarawihOfficers -> SlideTarawihOfficers(
+                    schedule = tarawihSchedule ?: TarawihSchedule(),
+                    night = activeTarawihNight,
+                    config = config
+                )
                 is CarouselSlideItem.MosqueActivities -> SlideMosqueActivities(activities = activities, config = config)
                 is CarouselSlideItem.DailyMaklumat -> SlideDailyMaklumat(config = config)
                 is CarouselSlideItem.QrisDonation -> SlideQrisDonation(config = config)
@@ -1080,6 +1087,260 @@ private fun SlideFridayOfficers(
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Normal,
                 color = Color(0xCCFDE68A)
+            )
+        }
+    }
+}
+
+// ----------------------------------------------------
+// SLIDE: PETUGAS SHOLAT TARAWIH & KULTUM RAMADHAN
+// ----------------------------------------------------
+@Composable
+private fun SlideTarawihOfficers(
+    schedule: TarawihSchedule,
+    night: Int,
+    config: MosqueConfig
+) {
+    val penceramahName = cleanOfficerName(schedule.penceramah, "Ust. Dr. H. Fathurrahman, M.Ag")
+    val judulKultum = schedule.judulKultum.ifBlank { "Meraih Keberkahan & Ampunan di Bulan Ramadhan" }
+    val imamTarawih = cleanOfficerName(schedule.imamTarawih, "Ustadz H. Ahmad Dahlan, Lc.")
+    val imamWitir = cleanOfficerName(schedule.imamWitir, "Ustadz Farhan Al-Hafizh")
+    val bilalTarawih = cleanOfficerName(schedule.bilalTarawih, "Akhi Muhammad Syahril")
+
+    val tarawihPreset = when (config.tarawihBgPreset) {
+        BackgroundPresetHelper.SAME_AS_MAIN -> config.mainScreenBgPreset
+        else -> config.tarawihBgPreset
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(16.dp))
+    ) {
+        SlideCanvasBackground(
+            customPath = config.customTarawihBgPath,
+            defaultPreset = tarawihPreset.ifBlank { BackgroundPresetHelper.PRESET_EMERALD_MIHRAB },
+            contentDescription = "Tarawih Officers Canvas"
+        )
+
+        val tarTitleColor = parseHexColor(config.tarawihTitleColor, SleekAmber400)
+        val tarTitleText = config.tarawihTitleText.ifBlank { "JADWAL PETUGAS SHOLAT TARAWIH & KULTUM" }
+        val tarOfficerNameColor = parseHexColor(config.tarawihOfficerNameColor, Color.White)
+        val tarOfficerLabelColor = parseHexColor(config.tarawihOfficerLabelColor, Color(0xFF90E0EF))
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 28.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 1. HEADER KANVAS
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("🌙", fontSize = 18.sp)
+                    Text(
+                        text = tarTitleText,
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Black,
+                        color = tarTitleColor,
+                        letterSpacing = 1.5.sp
+                    )
+                    Text("🌙", fontSize = 18.sp)
+                }
+                Text(
+                    text = schedule.date.ifBlank { "Malam ke-$night Ramadhan" },
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFDE68A)
+                )
+                Box(
+                    modifier = Modifier
+                        .width(260.dp)
+                        .height(1.5.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, tarTitleColor, Color.Transparent)
+                            )
+                        )
+                )
+            }
+
+            // 2. EMPAT PETUGAS UTAMA (2 Kolom Frameless Langsung di Atas Kanvas)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(28.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Kolom Kiri: Penceramah Kultum & Bilal
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Penceramah Kultum
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("🎙️", fontSize = 16.sp)
+                            Text(
+                                text = "PENCERAMAH KULTUM BA'DA ISYA",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                color = tarOfficerLabelColor,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                        Text(
+                            text = penceramahName,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Black,
+                            color = tarOfficerNameColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (judulKultum.isNotBlank()) {
+                            Text(
+                                text = "📜 “$judulKultum”",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFFFEF08A),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Color(0x3300E5FF))
+                    )
+
+                    // Bilal Tarawih
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("📢", fontSize = 16.sp)
+                            Text(
+                                text = "BILAL TARAWIH & SHALAWAT",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                color = tarOfficerLabelColor,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                        Text(
+                            text = bilalTarawih,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Black,
+                            color = tarOfficerNameColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                // Vertical Center Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.5.dp)
+                        .fillMaxHeight(0.85f)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Color(0x4DF59E0B), Color.Transparent)
+                            )
+                        )
+                )
+
+                // Kolom Kanan: Imam Tarawih & Imam Witir
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Imam Tarawih
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("🕌", fontSize = 16.sp)
+                            Text(
+                                text = "IMAM SHOLAT TARAWIH",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                color = tarOfficerLabelColor,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                        Text(
+                            text = imamTarawih,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Black,
+                            color = tarOfficerNameColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Color(0x3300E5FF))
+                    )
+
+                    // Imam Witir
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("👳", fontSize = 16.sp)
+                            Text(
+                                text = "IMAM SHOLAT WITIR",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                color = tarOfficerLabelColor,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                        Text(
+                            text = imamWitir,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Black,
+                            color = tarOfficerNameColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            // 3. FOOTER KANVAS
+            Text(
+                text = "✨ “Barangsiapa mendirikan sholat tarawih karena iman dan mengharap pahala, diampuni dosanya yang telah lalu.” (HR. Bukhari & Muslim)",
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = TextWhiteMuted,
+                textAlign = TextAlign.Center
             )
         }
     }

@@ -199,6 +199,7 @@ object PrayerCalculator {
             PrayerName.ASHAR -> schedule.ashar
             PrayerName.MAGHRIB -> schedule.maghrib
             PrayerName.ISYA -> schedule.isya
+            else -> ""
         }
 
         return NextPrayerInfo(

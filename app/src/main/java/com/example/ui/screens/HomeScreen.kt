@@ -185,7 +185,9 @@ fun HomeScreen(
                                         balance = uiState.balance,
                                         fridaySchedule = uiState.fridaySchedule,
                                         activities = uiState.activities,
-                                        mediaSlides = uiState.activeMediaSlides
+                                        mediaSlides = uiState.activeMediaSlides,
+                                        tarawihSchedule = uiState.activeTarawihSchedule,
+                                        activeTarawihNight = uiState.activeTarawihNight
                                     )
                                 }
                             }
@@ -204,7 +206,9 @@ fun HomeScreen(
                                     balance = uiState.balance,
                                     fridaySchedule = uiState.fridaySchedule,
                                     activities = uiState.activities,
-                                    mediaSlides = uiState.activeMediaSlides
+                                    mediaSlides = uiState.activeMediaSlides,
+                                    tarawihSchedule = uiState.activeTarawihSchedule,
+                                    activeTarawihNight = uiState.activeTarawihNight
                                 )
                             }
                             Spacer(modifier = Modifier.height(6.dp))
@@ -294,7 +298,9 @@ fun HomeScreen(
                                     balance = uiState.balance,
                                     fridaySchedule = uiState.fridaySchedule,
                                     activities = uiState.activities,
-                                    mediaSlides = uiState.activeMediaSlides
+                                    mediaSlides = uiState.activeMediaSlides,
+                                    tarawihSchedule = uiState.activeTarawihSchedule,
+                                    activeTarawihNight = uiState.activeTarawihNight
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
@@ -317,7 +323,7 @@ fun HomeScreen(
             }
         }
 
-            val isFridayNow = uiState.isFridayPrayer || (uiState.currentCalendar.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY && uiState.adhanPrayerName == PrayerName.DZUHUR)
+            val isFridayNow = (uiState.isFridayPrayer || (uiState.currentCalendar.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY && uiState.adhanPrayerName == PrayerName.DZUHUR)) && uiState.config.showFridayOfficers
 
             // Fullscreen Dynamic Overlays
             AnimatedVisibility(

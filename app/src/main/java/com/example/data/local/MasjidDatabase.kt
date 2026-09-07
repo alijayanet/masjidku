@@ -18,9 +18,10 @@ import kotlinx.coroutines.launch
         RunningTextEntity::class,
         MediaSlideEntity::class,
         DailyImamScheduleEntity::class,
-        MurottalAudioEntity::class
+        MurottalAudioEntity::class,
+        TarawihScheduleEntity::class
     ],
-    version = 20,
+    version = 22,
     exportSchema = false
 )
 abstract class MasjidDatabase : RoomDatabase() {
@@ -32,6 +33,7 @@ abstract class MasjidDatabase : RoomDatabase() {
     abstract fun mediaSlideDao(): MediaSlideDao
     abstract fun dailyImamScheduleDao(): DailyImamScheduleDao
     abstract fun murottalAudioDao(): MurottalAudioDao
+    abstract fun tarawihScheduleDao(): TarawihScheduleDao
 
     companion object {
         @Volatile
@@ -361,6 +363,69 @@ abstract class MasjidDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_20_21 = object : androidx.room.migration.Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN iqomahJumat INTEGER NOT NULL DEFAULT 15")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulFitriEnabled INTEGER NOT NULL DEFAULT 0")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulFitriDate TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulFitriTime TEXT NOT NULL DEFAULT '06:30'")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulFitriIqomahMinutes INTEGER NOT NULL DEFAULT 15")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulFitriSholatMinutes INTEGER NOT NULL DEFAULT 20")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulAdhaEnabled INTEGER NOT NULL DEFAULT 0")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulAdhaDate TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulAdhaTime TEXT NOT NULL DEFAULT '06:30'")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulAdhaIqomahMinutes INTEGER NOT NULL DEFAULT 15")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN idulAdhaSholatMinutes INTEGER NOT NULL DEFAULT 20")
+            }
+        }
+
+        val MIGRATION_1_21 = object : androidx.room.migration.Migration(1, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                MIGRATION_1_20.migrate(db)
+                MIGRATION_20_21.migrate(db)
+            }
+        }
+
+        val MIGRATION_21_22 = object : androidx.room.migration.Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                safeExecSQL(db, """
+                    CREATE TABLE IF NOT EXISTS tarawih_schedules (
+                        night INTEGER PRIMARY KEY NOT NULL,
+                        date TEXT NOT NULL DEFAULT '',
+                        penceramah TEXT NOT NULL DEFAULT '',
+                        penceramahPhone TEXT NOT NULL DEFAULT '',
+                        judulKultum TEXT NOT NULL DEFAULT '',
+                        imamTarawih TEXT NOT NULL DEFAULT '',
+                        imamTarawihPhone TEXT NOT NULL DEFAULT '',
+                        imamWitir TEXT NOT NULL DEFAULT '',
+                        imamWitirPhone TEXT NOT NULL DEFAULT '',
+                        bilalTarawih TEXT NOT NULL DEFAULT '',
+                        bilalTarawihPhone TEXT NOT NULL DEFAULT '',
+                        notes TEXT NOT NULL DEFAULT ''
+                    )
+                """.trimIndent())
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihEnabled INTEGER NOT NULL DEFAULT 0")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihAutoDetectNight INTEGER NOT NULL DEFAULT 1")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihManualNight INTEGER NOT NULL DEFAULT 1")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihShowSlide INTEGER NOT NULL DEFAULT 1")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihKultumMinutes INTEGER NOT NULL DEFAULT 15")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihSholatMinutes INTEGER NOT NULL DEFAULT 45")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihTitleText TEXT NOT NULL DEFAULT 'JADWAL PETUGAS SHOLAT TARAWIH & KULTUM'")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihTitleColor TEXT NOT NULL DEFAULT '#FFD700'")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihOfficerNameColor TEXT NOT NULL DEFAULT '#FFFFFF'")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihOfficerLabelColor TEXT NOT NULL DEFAULT '#38BDF8'")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN tarawihBgPreset TEXT NOT NULL DEFAULT 'PRESET_EMERALD_MIHRAB'")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN customTarawihBgPath TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        val MIGRATION_1_22 = object : androidx.room.migration.Migration(1, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                MIGRATION_1_21.migrate(db)
+                MIGRATION_21_22.migrate(db)
+            }
+        }
+
         // Direct migration from version 1, 2, 3, 4, 5, 6, 7 to 9
         val MIGRATION_1_9 = object : androidx.room.migration.Migration(1, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -434,7 +499,11 @@ abstract class MasjidDatabase : RoomDatabase() {
                         MIGRATION_18_19,
                         MIGRATION_1_19,
                         MIGRATION_19_20,
-                        MIGRATION_1_20
+                        MIGRATION_1_20,
+                        MIGRATION_20_21,
+                        MIGRATION_1_21,
+                        MIGRATION_21_22,
+                        MIGRATION_1_22
                     )
                     .fallbackToDestructiveMigration()
                     .addCallback(DatabaseCallback(scope))
@@ -484,9 +553,20 @@ abstract class MasjidDatabase : RoomDatabase() {
                     offsetIsya = 2,
                     iqomahSubuh = 10,
                     iqomahDzuhur = 10,
+                    iqomahJumat = 15,
                     iqomahAshar = 10,
                     iqomahMaghrib = 7,
                     iqomahIsya = 10,
+                    idulFitriEnabled = false,
+                    idulFitriDate = "",
+                    idulFitriTime = "06:30",
+                    idulFitriIqomahMinutes = 15,
+                    idulFitriSholatMinutes = 20,
+                    idulAdhaEnabled = false,
+                    idulAdhaDate = "",
+                    idulAdhaTime = "06:30",
+                    idulAdhaIqomahMinutes = 15,
+                    idulAdhaSholatMinutes = 20,
                     sholatDurationMinutes = 10,
                     hijriAdjustmentDays = 0,
                     activeTheme = "EMERALD_GOLD",
@@ -719,6 +799,58 @@ abstract class MasjidDatabase : RoomDatabase() {
             )
             for (rt in runningTexts) {
                 db.runningTextDao().insert(rt)
+            }
+
+            // 6. Initial 30-Night Tarawih Schedules
+            val tarawihSchedules = generateDefaultTarawihSchedules()
+            db.tarawihScheduleDao().insertAll(tarawihSchedules)
+        }
+
+        fun generateDefaultTarawihSchedules(): List<TarawihScheduleEntity> {
+            val samplePenceramah = listOf(
+                Pair("Ust. Dr. H. Fathurrahman, M.Ag", "Meraih Keberkahan dan Ampunan di Bulan Ramadhan"),
+                Pair("Buya H. Yahya Zainul Ma'arif", "Adab dan Fiqih Berpuasa Sesuai Sunnah"),
+                Pair("Ust. H. Abdul Somad, Lc., D.E.S.A", "Menghidupkan Malam Lailatul Qadar"),
+                Pair("Ust. Adi Hidayat, Lc., M.A.", "Tadabbur Al-Qur'an dan Pembersihan Jiwa"),
+                Pair("Ust. Dr. Syafiq Riza Basalamah", "Keutamaan Sedekah dan Kepedulian Sosial"),
+                Pair("Prof. Dr. KH. Nasaruddin Umar", "Membangun Kedamaian Hati dengan Dzikir"),
+                Pair("Ust. Hanan Attaki, Lc.", "Istiqomah Menjaga Semangat Ibadah"),
+                Pair("K.H. Ahmad Bahauddin Nursalim", "Hakikat Syukur dan Ikhlas Beribadah")
+            )
+            val sampleImam = listOf(
+                "Ust. H. Ahmad Dahlan, Lc.",
+                "Ust. Farhan Al-Hafizh",
+                "Ust. Ridwan Kamil, S.Q.",
+                "Ust. H. Syarifuddin Mustofa",
+                "Ust. Dr. Muhammad Iqbal",
+                "Ust. M. Firdaus Al-Hafidz"
+            )
+            val sampleBilal = listOf(
+                "Akhi Muhammad Syahril",
+                "Ust. Bilal Ramadhan",
+                "Akhi Rizky Kurniawan",
+                "Akhi Fauzan Azhima"
+            )
+
+            return (1..30).map { night ->
+                val p = samplePenceramah[(night - 1) % samplePenceramah.size]
+                val imamT = sampleImam[(night - 1) % sampleImam.size]
+                val imamW = sampleImam[night % sampleImam.size]
+                val bilal = sampleBilal[(night - 1) % sampleBilal.size]
+                TarawihScheduleEntity(
+                    night = night,
+                    date = "Malam ke-$night Ramadhan",
+                    penceramah = p.first,
+                    penceramahPhone = "",
+                    judulKultum = p.second,
+                    imamTarawih = imamT,
+                    imamTarawihPhone = "",
+                    imamWitir = imamW,
+                    imamWitirPhone = "",
+                    bilalTarawih = bilal,
+                    bilalTarawihPhone = "",
+                    notes = "Jadwal Resmi Tarawih Masjid"
+                )
             }
         }
     }

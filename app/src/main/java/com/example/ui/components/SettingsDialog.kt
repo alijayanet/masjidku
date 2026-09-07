@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.testTag
@@ -92,6 +93,7 @@ fun SettingsDialog(
 
     var iqSubuh by remember(config) { mutableStateOf(config.iqomahSubuh.toString()) }
     var iqDzuhur by remember(config) { mutableStateOf(config.iqomahDzuhur.toString()) }
+    var iqJumat by remember(config) { mutableStateOf(config.iqomahJumat.toString()) }
     var iqAshar by remember(config) { mutableStateOf(config.iqomahAshar.toString()) }
     var iqMaghrib by remember(config) { mutableStateOf(config.iqomahMaghrib.toString()) }
     var iqIsya by remember(config) { mutableStateOf(config.iqomahIsya.toString()) }
@@ -121,6 +123,14 @@ fun SettingsDialog(
     var youtubeEnabled by remember(config) { mutableStateOf(config.youtubeLiveEnabled) }
     var youtubeShowSlide by remember(config) { mutableStateOf(config.showYoutubeLiveSlide) }
     var youtubeMuted by remember(config) { mutableStateOf(config.youtubeLiveMuted) }
+
+    var tarawihEnabled by remember(config) { mutableStateOf(config.tarawihEnabled) }
+    var tarawihAutoDetectNight by remember(config) { mutableStateOf(config.tarawihAutoDetectNight) }
+    var tarawihManualNight by remember(config) { mutableStateOf(config.tarawihManualNight.toString()) }
+    var tarawihShowSlide by remember(config) { mutableStateOf(config.tarawihShowSlide) }
+    var tarawihKultumMinutes by remember(config) { mutableStateOf(config.tarawihKultumMinutes.toString()) }
+    var tarawihSholatMinutes by remember(config) { mutableStateOf(config.tarawihSholatMinutes.toString()) }
+    var tarawihBgPreset by remember(config) { mutableStateOf(config.tarawihBgPreset) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -192,6 +202,7 @@ fun SettingsDialog(
                                 "📲 Sambung HP" to 0,
                                 "🎧 Murottal & Tarhim" to 8,
                                 "🔴 YouTube Live" to 9,
+                                "🌙 Tarawih Ramadhan" to 10,
                                 "🕌 Profil & Lokasi" to 1,
                                 "🎨 Tema & Jam" to 2,
                                 "⏰ Jadwal & Imam" to 3,
@@ -298,6 +309,7 @@ fun SettingsDialog(
                                     offIsya = offIsya, onOffIsya = { offIsya = it },
                                     iqSubuh = iqSubuh, onIqSubuh = { iqSubuh = it },
                                     iqDzuhur = iqDzuhur, onIqDzuhur = { iqDzuhur = it },
+                                    iqJumat = iqJumat, onIqJumat = { iqJumat = it },
                                     iqAshar = iqAshar, onIqAshar = { iqAshar = it },
                                     iqMaghrib = iqMaghrib, onIqMaghrib = { iqMaghrib = it },
                                     iqIsya = iqIsya, onIqIsya = { iqIsya = it },
@@ -337,6 +349,7 @@ fun SettingsDialog(
                                                 offsetIsya = offIsya.toIntOrNull() ?: config.offsetIsya,
                                                 iqomahSubuh = iqSubuh.toIntOrNull() ?: config.iqomahSubuh,
                                                 iqomahDzuhur = iqDzuhur.toIntOrNull() ?: config.iqomahDzuhur,
+                                                iqomahJumat = iqJumat.toIntOrNull() ?: config.iqomahJumat,
                                                 iqomahAshar = iqAshar.toIntOrNull() ?: config.iqomahAshar,
                                                 iqomahMaghrib = iqMaghrib.toIntOrNull() ?: config.iqomahMaghrib,
                                                 iqomahIsya = iqIsya.toIntOrNull() ?: config.iqomahIsya,
@@ -355,6 +368,8 @@ fun SettingsDialog(
                                 5 -> TabMultiFridaySettings(
                                     allSchedules = allFridaySchedules,
                                     upcomingIndex = upcomingFridayIndex,
+                                    config = config,
+                                    onSaveConfig = onSaveConfig,
                                     onSaveFriday = onSaveFriday
                                 )
                                 6 -> TabActivitiesSettings(activities, onAddActivity, onDeleteActivity)
@@ -390,6 +405,36 @@ fun SettingsDialog(
                                     },
                                     onPlayPreset = onPlayMurottalPreset,
                                     onStopPlayer = onStopMurottal
+                                )
+                                10 -> TabTarawihSettings(
+                                    config = config,
+                                    tarawihEnabled = tarawihEnabled,
+                                    onTarawihEnabledChange = { tarawihEnabled = it },
+                                    tarawihAutoDetectNight = tarawihAutoDetectNight,
+                                    onTarawihAutoDetectChange = { tarawihAutoDetectNight = it },
+                                    tarawihManualNight = tarawihManualNight,
+                                    onTarawihManualNightChange = { tarawihManualNight = it },
+                                    tarawihShowSlide = tarawihShowSlide,
+                                    onTarawihShowSlideChange = { tarawihShowSlide = it },
+                                    tarawihKultumMinutes = tarawihKultumMinutes,
+                                    onTarawihKultumMinutesChange = { tarawihKultumMinutes = it },
+                                    tarawihSholatMinutes = tarawihSholatMinutes,
+                                    onTarawihSholatMinutesChange = { tarawihSholatMinutes = it },
+                                    tarawihBgPreset = tarawihBgPreset,
+                                    onTarawihBgPresetChange = { tarawihBgPreset = it },
+                                    onSave = {
+                                        onSaveConfig(
+                                            config.copy(
+                                                tarawihEnabled = tarawihEnabled,
+                                                tarawihAutoDetectNight = tarawihAutoDetectNight,
+                                                tarawihManualNight = tarawihManualNight.toIntOrNull() ?: config.tarawihManualNight,
+                                                tarawihShowSlide = tarawihShowSlide,
+                                                tarawihKultumMinutes = tarawihKultumMinutes.toIntOrNull() ?: config.tarawihKultumMinutes,
+                                                tarawihSholatMinutes = tarawihSholatMinutes.toIntOrNull() ?: config.tarawihSholatMinutes,
+                                                tarawihBgPreset = tarawihBgPreset
+                                            )
+                                        )
+                                    }
                                 )
                                 9 -> TabYouTubeLiveSettings(
                                     url = youtubeUrl, onUrlChange = { youtubeUrl = it },
@@ -884,6 +929,7 @@ private fun TabPrayerSettings(
     offIsya: String, onOffIsya: (String) -> Unit,
     iqSubuh: String, onIqSubuh: (String) -> Unit,
     iqDzuhur: String, onIqDzuhur: (String) -> Unit,
+    iqJumat: String, onIqJumat: (String) -> Unit,
     iqAshar: String, onIqAshar: (String) -> Unit,
     iqMaghrib: String, onIqMaghrib: (String) -> Unit,
     iqIsya: String, onIqIsya: (String) -> Unit,
@@ -1020,12 +1066,13 @@ private fun TabPrayerSettings(
         }
 
         Text("Durasi Hitung Mundur Iqomah (Menit):", fontSize = 11.sp, color = IslamicGoldLight)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            OutlinedTextField(value = iqSubuh, onValueChange = onIqSubuh, label = { Text("Iq Subuh", fontSize = 10.sp) }, modifier = Modifier.weight(1f), singleLine = true)
-            OutlinedTextField(value = iqDzuhur, onValueChange = onIqDzuhur, label = { Text("Iq Dzuhur", fontSize = 10.sp) }, modifier = Modifier.weight(1f), singleLine = true)
-            OutlinedTextField(value = iqAshar, onValueChange = onIqAshar, label = { Text("Iq Ashar", fontSize = 10.sp) }, modifier = Modifier.weight(1f), singleLine = true)
-            OutlinedTextField(value = iqMaghrib, onValueChange = onIqMaghrib, label = { Text("Iq Maghrib", fontSize = 10.sp) }, modifier = Modifier.weight(1f), singleLine = true)
-            OutlinedTextField(value = iqIsya, onValueChange = onIqIsya, label = { Text("Iq Isya", fontSize = 10.sp) }, modifier = Modifier.weight(1f), singleLine = true)
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            OutlinedTextField(value = iqSubuh, onValueChange = onIqSubuh, label = { Text("Subuh", fontSize = 9.sp) }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(value = iqDzuhur, onValueChange = onIqDzuhur, label = { Text("Dzuhur", fontSize = 9.sp) }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(value = iqJumat, onValueChange = onIqJumat, label = { Text("Jum'at", fontSize = 9.sp) }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(value = iqAshar, onValueChange = onIqAshar, label = { Text("Ashar", fontSize = 9.sp) }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(value = iqMaghrib, onValueChange = onIqMaghrib, label = { Text("Maghrib", fontSize = 9.sp) }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(value = iqIsya, onValueChange = onIqIsya, label = { Text("Isya", fontSize = 9.sp) }, modifier = Modifier.weight(1f), singleLine = true)
         }
 
         Button(
@@ -1052,6 +1099,8 @@ private fun TabPrayerSettings(
 private fun TabMultiFridaySettings(
     allSchedules: List<FridaySchedule>,
     upcomingIndex: Int,
+    config: MosqueConfig? = null,
+    onSaveConfig: ((MosqueConfig) -> Unit)? = null,
     onSaveFriday: (FridaySchedule) -> Unit
 ) {
     var selectedWeek by remember { mutableStateOf(upcomingIndex.coerceIn(1, 7)) }
@@ -1092,6 +1141,23 @@ private fun TabMultiFridaySettings(
     val isIdulFitri = selectedWeek == 6
     val isIdulAdha = selectedWeek == 7
     val isHariRaya = isIdulFitri || isIdulAdha
+
+    // Hari Raya Execution Settings State
+    var hrEnabled by remember(config, selectedWeek) {
+        mutableStateOf(if (isIdulFitri) config?.idulFitriEnabled ?: true else config?.idulAdhaEnabled ?: true)
+    }
+    var hrDate by remember(config, selectedWeek) {
+        mutableStateOf(if (isIdulFitri) config?.idulFitriDate.orEmpty() else config?.idulAdhaDate.orEmpty())
+    }
+    var hrTime by remember(config, selectedWeek) {
+        mutableStateOf(if (isIdulFitri) (config?.idulFitriTime?.takeIf { it.isNotBlank() } ?: "06:30") else (config?.idulAdhaTime?.takeIf { it.isNotBlank() } ?: "06:30"))
+    }
+    var hrIqomah by remember(config, selectedWeek) {
+        mutableStateOf(if (isIdulFitri) (config?.idulFitriIqomahMinutes ?: 15).toString() else (config?.idulAdhaIqomahMinutes ?: 15).toString())
+    }
+    var hrSholat by remember(config, selectedWeek) {
+        mutableStateOf(if (isIdulFitri) (config?.idulFitriSholatMinutes ?: 20).toString() else (config?.idulAdhaSholatMinutes ?: 20).toString())
+    }
 
     val eventName = when (selectedWeek) {
         6 -> "Sholat Idul Fitri"
@@ -1221,6 +1287,62 @@ private fun TabMultiFridaySettings(
                     )
                 }
 
+                if (isHariRaya) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0x2610B981)),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("⚙️ Aktifkan Otomatisasi Waktu Sholat", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SleekAmber300)
+                                Switch(
+                                    checked = hrEnabled,
+                                    onCheckedChange = { hrEnabled = it },
+                                    modifier = Modifier.scale(0.8f)
+                                )
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = hrDate,
+                                    onValueChange = { hrDate = it },
+                                    label = { Text("Tgl Pelaksanaan (YYYY-MM-DD)", fontSize = 10.sp) },
+                                    modifier = Modifier.weight(1.2f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = hrTime,
+                                    onValueChange = { hrTime = it },
+                                    label = { Text("Jam Sholat (HH:mm)", fontSize = 10.sp) },
+                                    modifier = Modifier.weight(0.8f),
+                                    singleLine = true
+                                )
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = hrIqomah,
+                                    onValueChange = { hrIqomah = it },
+                                    label = { Text("Countdown Pra-Sholat (Mnt)", fontSize = 10.sp) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = hrSholat,
+                                    onValueChange = { hrSholat = it },
+                                    label = { Text("Durasi Sholat/Khutbah (Mnt)", fontSize = 10.sp) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Button(
                     onClick = {
                         val defaultNotes = when (selectedWeek) {
@@ -1240,6 +1362,31 @@ private fun TabMultiFridaySettings(
                             notes = if (currentSchedule.notes.isNotBlank()) currentSchedule.notes else defaultNotes
                         )
                         onSaveFriday(updated)
+
+                        if (config != null && onSaveConfig != null) {
+                            if (isIdulFitri) {
+                                onSaveConfig(
+                                    config.copy(
+                                        idulFitriEnabled = hrEnabled,
+                                        idulFitriDate = hrDate,
+                                        idulFitriTime = hrTime,
+                                        idulFitriIqomahMinutes = hrIqomah.toIntOrNull() ?: config.idulFitriIqomahMinutes,
+                                        idulFitriSholatMinutes = hrSholat.toIntOrNull() ?: config.idulFitriSholatMinutes
+                                    )
+                                )
+                            } else if (isIdulAdha) {
+                                onSaveConfig(
+                                    config.copy(
+                                        idulAdhaEnabled = hrEnabled,
+                                        idulAdhaDate = hrDate,
+                                        idulAdhaTime = hrTime,
+                                        idulAdhaIqomahMinutes = hrIqomah.toIntOrNull() ?: config.idulAdhaIqomahMinutes,
+                                        idulAdhaSholatMinutes = hrSholat.toIntOrNull() ?: config.idulAdhaSholatMinutes
+                                    )
+                                )
+                            }
+                        }
+
                         savedToast = true
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -1964,5 +2111,202 @@ private fun TabYouTubeLiveSettings(
                 colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF10B981))
             )
         }
+    }
+}
+
+@Composable
+private fun TabTarawihSettings(
+    config: MosqueConfig,
+    tarawihEnabled: Boolean,
+    onTarawihEnabledChange: (Boolean) -> Unit,
+    tarawihAutoDetectNight: Boolean,
+    onTarawihAutoDetectChange: (Boolean) -> Unit,
+    tarawihManualNight: String,
+    onTarawihManualNightChange: (String) -> Unit,
+    tarawihShowSlide: Boolean,
+    onTarawihShowSlideChange: (Boolean) -> Unit,
+    tarawihKultumMinutes: String,
+    onTarawihKultumMinutesChange: (String) -> Unit,
+    tarawihSholatMinutes: String,
+    onTarawihSholatMinutesChange: (String) -> Unit,
+    tarawihBgPreset: String,
+    onTarawihBgPresetChange: (String) -> Unit,
+    onSave: () -> Unit
+) {
+    var savedToast by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("🌙 Tarawih Ramadhan", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = IslamicGoldLight)
+            Button(
+                onClick = {
+                    onSave()
+                    savedToast = "Pengaturan Tarawih Ramadhan Berhasil Disimpan!"
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = IslamicGoldPrimary),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(6.dp)
+            ) {
+                Text("💾 Simpan", color = IslamicEmeraldDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        if (savedToast != null) {
+            Text(savedToast!!, color = IslamicGoldBright, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        }
+
+        // Status Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = if (tarawihEnabled) Color(0x3310B981) else Color(0x22FFFFFF)),
+            border = androidx.compose.foundation.BorderStroke(1.dp, if (tarawihEnabled) Color(0xFF10B981) else Color(0x33FFFFFF)),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(if (tarawihEnabled) Color(0xFF10B981) else Color.Gray)
+                    )
+                    Text(
+                        text = if (tarawihEnabled) "🟢 FITUR TARAWIH RAMADHAN AKTIF" else "⚪ FITUR TARAWIH NONAKTIF",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = Color.White
+                    )
+                }
+                Text(
+                    text = "Mode: " + if (tarawihAutoDetectNight) "Otomatis Kalender Hijriyah" else "Manual Malam ke-$tarawihManualNight",
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
+
+        // Toggles
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0x1AFFFFFF)),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Aktifkan Fitur Tarawih Ramadhan", fontSize = 12.sp, color = Color.White)
+                    Switch(
+                        checked = tarawihEnabled,
+                        onCheckedChange = onTarawihEnabledChange,
+                        modifier = Modifier.scale(0.8f),
+                        colors = SwitchDefaults.colors(checkedThumbColor = IslamicGoldPrimary, checkedTrackColor = IslamicEmeraldDark)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Otomatis Deteksi Malam Tarawih (Hijriyah)", fontSize = 12.sp, color = Color.White)
+                    Switch(
+                        checked = tarawihAutoDetectNight,
+                        onCheckedChange = onTarawihAutoDetectChange,
+                        modifier = Modifier.scale(0.8f),
+                        colors = SwitchDefaults.colors(checkedThumbColor = IslamicGoldPrimary, checkedTrackColor = IslamicEmeraldDark)
+                    )
+                }
+
+                if (!tarawihAutoDetectNight) {
+                    OutlinedTextField(
+                        value = tarawihManualNight,
+                        onValueChange = onTarawihManualNightChange,
+                        label = { Text("Malam Tarawih Manual (1 - 30)", fontSize = 11.sp) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = IslamicGoldPrimary,
+                            unfocusedBorderColor = Color(0x66FFFFFF),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Tampilkan Slide Petugas Tarawih di TV", fontSize = 12.sp, color = Color.White)
+                    Switch(
+                        checked = tarawihShowSlide,
+                        onCheckedChange = onTarawihShowSlideChange,
+                        modifier = Modifier.scale(0.8f),
+                        colors = SwitchDefaults.colors(checkedThumbColor = IslamicGoldPrimary, checkedTrackColor = IslamicEmeraldDark)
+                    )
+                }
+            }
+        }
+
+        // Durations
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0x1AFFFFFF)),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Durasi Tampilan Layar Tarawih:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = IslamicGoldBright)
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = tarawihKultumMinutes,
+                        onValueChange = onTarawihKultumMinutesChange,
+                        label = { Text("Durasi Kultum (Menit)", fontSize = 10.sp) },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = IslamicGoldPrimary,
+                            unfocusedBorderColor = Color(0x66FFFFFF),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = tarawihSholatMinutes,
+                        onValueChange = onTarawihSholatMinutesChange,
+                        label = { Text("Durasi Sholat (Menit)", fontSize = 10.sp) },
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = IslamicGoldPrimary,
+                            unfocusedBorderColor = Color(0x66FFFFFF),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+                }
+            }
+        }
+
+        Text(
+            "💡 Info: Untuk mengatur nama penceramah, imam, dan bilal per malam dari 30 malam Ramadhan, silakan gunakan Web Remote Admin melalui browser HP / Laptop Anda.",
+            fontSize = 11.sp,
+            color = IslamicGoldLight.copy(alpha = 0.8f),
+            lineHeight = 16.sp
+        )
     }
 }

@@ -83,9 +83,32 @@ data class MosqueConfig(
     val offsetIsya: Int = 2,
     val iqomahSubuh: Int = 10,
     val iqomahDzuhur: Int = 10,
+    val iqomahJumat: Int = 15,
     val iqomahAshar: Int = 10,
     val iqomahMaghrib: Int = 7,
     val iqomahIsya: Int = 10,
+    val idulFitriEnabled: Boolean = false,
+    val idulFitriDate: String = "",
+    val idulFitriTime: String = "06:30",
+    val idulFitriIqomahMinutes: Int = 15,
+    val idulFitriSholatMinutes: Int = 20,
+    val idulAdhaEnabled: Boolean = false,
+    val idulAdhaDate: String = "",
+    val idulAdhaTime: String = "06:30",
+    val idulAdhaIqomahMinutes: Int = 15,
+    val idulAdhaSholatMinutes: Int = 20,
+    val tarawihEnabled: Boolean = false,
+    val tarawihAutoDetectNight: Boolean = true,
+    val tarawihManualNight: Int = 1,
+    val tarawihShowSlide: Boolean = true,
+    val tarawihKultumMinutes: Int = 15,
+    val tarawihSholatMinutes: Int = 45,
+    val tarawihTitleText: String = "JADWAL PETUGAS SHOLAT TARAWIH & KULTUM",
+    val tarawihTitleColor: String = "#FFD700",
+    val tarawihOfficerNameColor: String = "#FFFFFF",
+    val tarawihOfficerLabelColor: String = "#38BDF8",
+    val tarawihBgPreset: String = "PRESET_EMERALD_MIHRAB",
+    val customTarawihBgPath: String = "",
     val sholatDurationMinutes: Int = 10,
     val hijriAdjustmentDays: Int = 0,
     val activeTheme: String = "EMERALD_GOLD", // EMERALD_GOLD, ROYAL_NAVY, SUNSET_AMBER, MIDNIGHT_CHARCOAL, MIHRAB_CLASSIC
@@ -379,6 +402,21 @@ data class FridaySchedule(
     val notes: String = ""
 )
 
+data class TarawihSchedule(
+    val night: Int = 1, // 1 to 30
+    val date: String = "",
+    val penceramah: String = "",
+    val penceramahPhone: String = "",
+    val judulKultum: String = "",
+    val imamTarawih: String = "",
+    val imamTarawihPhone: String = "",
+    val imamWitir: String = "",
+    val imamWitirPhone: String = "",
+    val bilalTarawih: String = "",
+    val bilalTarawihPhone: String = "",
+    val notes: String = ""
+)
+
 data class MosqueActivity(
     val id: Long = 0,
     val title: String,
@@ -419,7 +457,9 @@ enum class PrayerName(val displayName: String, val arabicName: String) {
     DZUHUR("Dzuhur", "الظهر"),
     ASHAR("Ashar", "العصر"),
     MAGHRIB("Maghrib", "المغرب"),
-    ISYA("Isya'", "العشاء");
+    ISYA("Isya'", "العشاء"),
+    IDUL_FITRI("Idul Fitri", "عيد الفطر"),
+    IDUL_ADHA("Idul Adha", "عيد الأضحى");
 
     fun getDisplayName(isFriday: Boolean = false): String =
         if (isFriday && this == DZUHUR) "Jum'at" else displayName
@@ -433,7 +473,9 @@ data class ActivePrayerOfficers(
     val muadzin: String = "",
     val khotib: String = "",
     val bilal: String = "",
-    val isFriday: Boolean = false
+    val isFriday: Boolean = false,
+    val isHariRaya: Boolean = false,
+    val eventTitle: String = ""
 )
 
 data class NextPrayerInfo(

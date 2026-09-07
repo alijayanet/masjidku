@@ -407,6 +407,22 @@ class LocalHttpServer(
                         sendResponse(output, "200 OK", "application/json", "{\"status\":\"ok\",\"message\":\"Petugas Jum'at berhasil diperbarui!\"}".toByteArray())
                     }
                 }
+                path == "/api/save-tarawih" && method == "POST" -> {
+                    if (!isAuthorized(headers, pathWithQuery, body)) {
+                        sendUnauthorized(output)
+                    } else {
+                        handleSaveTarawih(body)
+                        sendResponse(output, "200 OK", "application/json", "{\"status\":\"ok\",\"message\":\"Jadwal Tarawih Ramadhan berhasil disimpan!\"}".toByteArray())
+                    }
+                }
+                path == "/api/populate-tarawih" && method == "POST" -> {
+                    if (!isAuthorized(headers, pathWithQuery, body)) {
+                        sendUnauthorized(output)
+                    } else {
+                        repository.populateDefaultTarawihSchedules()
+                        sendResponse(output, "200 OK", "application/json", "{\"status\":\"ok\",\"message\":\"30 Malam Tarawih berhasil di-generate!\"}".toByteArray())
+                    }
+                }
                 path == "/api/add-imam-schedule" && method == "POST" -> {
                     if (!isAuthorized(headers, pathWithQuery, body)) {
                         sendUnauthorized(output)
@@ -748,6 +764,14 @@ class LocalHttpServer(
                         sendUnauthorized(output)
                     } else {
                         val res = handleSendActivityReminder(body)
+                        sendResponse(output, "200 OK", "application/json; charset=UTF-8", res.toByteArray(StandardCharsets.UTF_8))
+                    }
+                }
+                path == "/api/wa-gateway/send-tarawih-reminder" && method == "POST" -> {
+                    if (!isAuthorized(headers, pathWithQuery, body)) {
+                        sendUnauthorized(output)
+                    } else {
+                        val res = handleSendWaTarawih(body)
                         sendResponse(output, "200 OK", "application/json; charset=UTF-8", res.toByteArray(StandardCharsets.UTF_8))
                     }
                 }
@@ -1478,6 +1502,7 @@ class LocalHttpServer(
             offsetIsya = params["offsetIsya"]?.toIntOrNull() ?: current.offsetIsya,
             iqomahSubuh = params["iqomahSubuh"]?.toIntOrNull() ?: current.iqomahSubuh,
             iqomahDzuhur = params["iqomahDzuhur"]?.toIntOrNull() ?: current.iqomahDzuhur,
+            iqomahJumat = params["iqomahJumat"]?.toIntOrNull() ?: current.iqomahJumat,
             iqomahAshar = params["iqomahAshar"]?.toIntOrNull() ?: current.iqomahAshar,
             iqomahMaghrib = params["iqomahMaghrib"]?.toIntOrNull() ?: current.iqomahMaghrib,
             iqomahIsya = params["iqomahIsya"]?.toIntOrNull() ?: current.iqomahIsya,
@@ -1576,7 +1601,33 @@ class LocalHttpServer(
             clockFontFamily = params["clockFontFamily"] ?: current.clockFontFamily,
             clockColor = params["clockColor"] ?: current.clockColor,
             clockColonColor = params["clockColonColor"] ?: current.clockColonColor,
-            clockSecondsColor = params["clockSecondsColor"] ?: current.clockSecondsColor
+            clockSecondsColor = params["clockSecondsColor"] ?: current.clockSecondsColor,
+
+            // --- Pengaturan Sholat Hari Raya ---
+            idulFitriEnabled = parseBool(params["idulFitriEnabled"], current.idulFitriEnabled),
+            idulFitriDate = params["idulFitriDate"] ?: current.idulFitriDate,
+            idulFitriTime = params["idulFitriTime"] ?: current.idulFitriTime,
+            idulFitriIqomahMinutes = params["idulFitriIqomahMinutes"]?.toIntOrNull() ?: current.idulFitriIqomahMinutes,
+            idulFitriSholatMinutes = params["idulFitriSholatMinutes"]?.toIntOrNull() ?: current.idulFitriSholatMinutes,
+            idulAdhaEnabled = parseBool(params["idulAdhaEnabled"], current.idulAdhaEnabled),
+            idulAdhaDate = params["idulAdhaDate"] ?: current.idulAdhaDate,
+            idulAdhaTime = params["idulAdhaTime"] ?: current.idulAdhaTime,
+            idulAdhaIqomahMinutes = params["idulAdhaIqomahMinutes"]?.toIntOrNull() ?: current.idulAdhaIqomahMinutes,
+            idulAdhaSholatMinutes = params["idulAdhaSholatMinutes"]?.toIntOrNull() ?: current.idulAdhaSholatMinutes,
+
+            // --- Pengaturan Tarawih Ramadhan ---
+            tarawihEnabled = parseBool(params["tarawihEnabled"], current.tarawihEnabled),
+            tarawihAutoDetectNight = parseBool(params["tarawihAutoDetectNight"], current.tarawihAutoDetectNight),
+            tarawihManualNight = params["tarawihManualNight"]?.toIntOrNull() ?: current.tarawihManualNight,
+            tarawihShowSlide = parseBool(params["tarawihShowSlide"], current.tarawihShowSlide),
+            tarawihKultumMinutes = params["tarawihKultumMinutes"]?.toIntOrNull() ?: current.tarawihKultumMinutes,
+            tarawihSholatMinutes = params["tarawihSholatMinutes"]?.toIntOrNull() ?: current.tarawihSholatMinutes,
+            tarawihTitleText = params["tarawihTitleText"] ?: current.tarawihTitleText,
+            tarawihTitleColor = params["tarawihTitleColor"] ?: current.tarawihTitleColor,
+            tarawihOfficerNameColor = params["tarawihOfficerNameColor"] ?: current.tarawihOfficerNameColor,
+            tarawihOfficerLabelColor = params["tarawihOfficerLabelColor"] ?: current.tarawihOfficerLabelColor,
+            tarawihBgPreset = params["tarawihBgPreset"] ?: current.tarawihBgPreset,
+            customTarawihBgPath = params["customTarawihBgPath"] ?: current.customTarawihBgPath
         )
         repository.saveConfig(updated)
     }
@@ -1676,7 +1727,136 @@ class LocalHttpServer(
                 notes = params["notes"] ?: current.notes
             )
             repository.saveFridaySchedule(updated)
+
+            // Also persist Hari Raya specific execution settings if id == 6 or 7
+            if (id == 6L) {
+                val currentCfg = repository.configFlow.first()
+                val updatedCfg = currentCfg.copy(
+                    idulFitriEnabled = parseBool(params["idulFitriEnabled"], currentCfg.idulFitriEnabled),
+                    idulFitriDate = params["idulFitriDate"] ?: currentCfg.idulFitriDate,
+                    idulFitriTime = params["idulFitriTime"] ?: currentCfg.idulFitriTime,
+                    idulFitriIqomahMinutes = params["idulFitriIqomahMinutes"]?.toIntOrNull() ?: currentCfg.idulFitriIqomahMinutes,
+                    idulFitriSholatMinutes = params["idulFitriSholatMinutes"]?.toIntOrNull() ?: currentCfg.idulFitriSholatMinutes
+                )
+                repository.saveConfig(updatedCfg)
+            } else if (id == 7L) {
+                val currentCfg = repository.configFlow.first()
+                val updatedCfg = currentCfg.copy(
+                    idulAdhaEnabled = parseBool(params["idulAdhaEnabled"], currentCfg.idulAdhaEnabled),
+                    idulAdhaDate = params["idulAdhaDate"] ?: currentCfg.idulAdhaDate,
+                    idulAdhaTime = params["idulAdhaTime"] ?: currentCfg.idulAdhaTime,
+                    idulAdhaIqomahMinutes = params["idulAdhaIqomahMinutes"]?.toIntOrNull() ?: currentCfg.idulAdhaIqomahMinutes,
+                    idulAdhaSholatMinutes = params["idulAdhaSholatMinutes"]?.toIntOrNull() ?: currentCfg.idulAdhaSholatMinutes
+                )
+                repository.saveConfig(updatedCfg)
+            }
         }
+    }
+
+    private suspend fun handleSaveTarawih(body: String) {
+        val params = parseParams(body)
+        val night = params["night"]?.toIntOrNull() ?: 1
+        val isConfigOnly = parseBool(params["isConfigOnly"], false)
+
+        if (!isConfigOnly) {
+            val current = repository.getTarawihScheduleForNight(night) ?: com.example.data.model.TarawihSchedule(
+                night = night,
+                date = "Malam ke-$night Ramadhan"
+            )
+            val updated = current.copy(
+                night = night,
+                date = params["date"] ?: current.date,
+                penceramah = params["penceramah"] ?: current.penceramah,
+                penceramahPhone = params["penceramahPhone"] ?: current.penceramahPhone,
+                judulKultum = params["judulKultum"] ?: current.judulKultum,
+                imamTarawih = params["imamTarawih"] ?: current.imamTarawih,
+                imamTarawihPhone = params["imamTarawihPhone"] ?: current.imamTarawihPhone,
+                imamWitir = params["imamWitir"] ?: current.imamWitir,
+                imamWitirPhone = params["imamWitirPhone"] ?: current.imamWitirPhone,
+                bilalTarawih = params["bilalTarawih"] ?: current.bilalTarawih,
+                bilalTarawihPhone = params["bilalTarawihPhone"] ?: current.bilalTarawihPhone,
+                notes = params["notes"] ?: current.notes
+            )
+            repository.saveTarawihSchedule(updated)
+        }
+
+        if (params.containsKey("tarawihEnabled") || params.containsKey("tarawihManualNight") || params.containsKey("tarawihShowSlide")) {
+            val curCfg = repository.configFlow.first()
+            val updatedCfg = curCfg.copy(
+                tarawihEnabled = parseBool(params["tarawihEnabled"], curCfg.tarawihEnabled),
+                tarawihAutoDetectNight = parseBool(params["tarawihAutoDetectNight"], curCfg.tarawihAutoDetectNight),
+                tarawihManualNight = params["tarawihManualNight"]?.toIntOrNull() ?: curCfg.tarawihManualNight,
+                tarawihShowSlide = parseBool(params["tarawihShowSlide"], curCfg.tarawihShowSlide),
+                tarawihKultumMinutes = params["tarawihKultumMinutes"]?.toIntOrNull() ?: curCfg.tarawihKultumMinutes,
+                tarawihSholatMinutes = params["tarawihSholatMinutes"]?.toIntOrNull() ?: curCfg.tarawihSholatMinutes,
+                tarawihTitleText = params["tarawihTitleText"] ?: curCfg.tarawihTitleText,
+                tarawihTitleColor = params["tarawihTitleColor"] ?: curCfg.tarawihTitleColor,
+                tarawihOfficerNameColor = params["tarawihOfficerNameColor"] ?: curCfg.tarawihOfficerNameColor,
+                tarawihOfficerLabelColor = params["tarawihOfficerLabelColor"] ?: curCfg.tarawihOfficerLabelColor,
+                tarawihBgPreset = params["tarawihBgPreset"] ?: curCfg.tarawihBgPreset,
+                customTarawihBgPath = params["customTarawihBgPath"] ?: curCfg.customTarawihBgPath
+            )
+            repository.saveConfig(updatedCfg)
+        }
+    }
+
+    private suspend fun handleSendWaTarawih(body: String): String {
+        val params = parseParams(body)
+        val night = params["night"]?.toIntOrNull() ?: 1
+
+        val cfg = repository.configFlow.first()
+        val schedule = repository.getTarawihScheduleForNight(night)
+            ?: return "{\"status\":\"error\",\"message\":\"Jadwal Tarawih malam ke-$night belum diisi!\"}"
+
+        val token = cfg.waGatewayToken
+        if (token.isBlank()) {
+            return "{\"status\":\"error\",\"message\":\"Token Fonnte belum diisi di Pengaturan WhatsApp Gateway\"}"
+        }
+
+        val template = com.example.notification.WhatsAppGatewayManager.DEFAULT_TEMPLATE_TARAWIH
+
+        val officers = listOf(
+            Triple("Penceramah Kultum", schedule.penceramah, schedule.penceramahPhone),
+            Triple("Imam Sholat Tarawih", schedule.imamTarawih, schedule.imamTarawihPhone),
+            Triple("Imam Sholat Witir", schedule.imamWitir, schedule.imamWitirPhone),
+            Triple("Bilal / Muadzin Tarawih", schedule.bilalTarawih, schedule.bilalTarawihPhone)
+        )
+
+        var sentCount = 0
+        val errors = mutableListOf<String>()
+
+        for ((role, name, phone) in officers) {
+            if (name.isNotBlank() && phone.isNotBlank()) {
+                val msg = com.example.notification.WhatsAppGatewayManager.formatTarawihMessage(
+                    template = template,
+                    config = cfg,
+                    schedule = schedule,
+                    officerName = name,
+                    roleName = role,
+                    isyaTimeStr = "19:15 WIB"
+                )
+                val sendRes = com.example.notification.WhatsAppGatewayManager.sendMessage(token, phone, msg)
+                if (sendRes.success) {
+                    sentCount++
+                } else {
+                    errors.add("$role ($name): ${sendRes.message}")
+                }
+            }
+        }
+
+        val nowStr = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+        val logEntry = "Tarawih malam ke-$night broadcast: $sentCount pesan terkirim (${errors.size} gagal) pada $nowStr"
+        repository.updateWaGatewayLastSent(
+            thursdayDate = cfg.waGatewayLastSentThursdayDate,
+            fridayDate = cfg.waGatewayLastSentFridayDate,
+            logJson = logEntry
+        )
+
+        val res = JSONObject().apply {
+            put("status", if (sentCount > 0 || errors.isEmpty()) "ok" else "error")
+            put("message", "Berhasil mengirim $sentCount pesan pengingat Tarawih Malam ke-$night." + if (errors.isNotEmpty()) " Gagal: " + errors.joinToString(", ") else "")
+        }
+        return res.toString()
     }
 
     private suspend fun handleAddActivity(body: String) {
@@ -2105,6 +2285,7 @@ class LocalHttpServer(
             put("offsetIsya", config.offsetIsya)
             put("iqomahSubuh", config.iqomahSubuh)
             put("iqomahDzuhur", config.iqomahDzuhur)
+            put("iqomahJumat", config.iqomahJumat)
             put("iqomahAshar", config.iqomahAshar)
             put("iqomahMaghrib", config.iqomahMaghrib)
             put("iqomahIsya", config.iqomahIsya)
@@ -2239,8 +2420,54 @@ class LocalHttpServer(
             put("waGatewayTemplateFriday", config.waGatewayTemplateFriday)
             put("waGatewayTemplateKajian", config.waGatewayTemplateKajian)
             put("waGatewayLastLogJson", config.waGatewayLastLogJson)
+
+            put("idulFitriEnabled", config.idulFitriEnabled)
+            put("idulFitriDate", config.idulFitriDate)
+            put("idulFitriTime", config.idulFitriTime)
+            put("idulFitriIqomahMinutes", config.idulFitriIqomahMinutes)
+            put("idulFitriSholatMinutes", config.idulFitriSholatMinutes)
+            put("idulAdhaEnabled", config.idulAdhaEnabled)
+            put("idulAdhaDate", config.idulAdhaDate)
+            put("idulAdhaTime", config.idulAdhaTime)
+            put("idulAdhaIqomahMinutes", config.idulAdhaIqomahMinutes)
+            put("idulAdhaSholatMinutes", config.idulAdhaSholatMinutes)
+
+            put("tarawihEnabled", config.tarawihEnabled)
+            put("tarawihAutoDetectNight", config.tarawihAutoDetectNight)
+            put("tarawihManualNight", config.tarawihManualNight)
+            put("tarawihShowSlide", config.tarawihShowSlide)
+            put("tarawihKultumMinutes", config.tarawihKultumMinutes)
+            put("tarawihSholatMinutes", config.tarawihSholatMinutes)
+            put("tarawihTitleText", config.tarawihTitleText)
+            put("tarawihTitleColor", config.tarawihTitleColor)
+            put("tarawihOfficerNameColor", config.tarawihOfficerNameColor)
+            put("tarawihOfficerLabelColor", config.tarawihOfficerLabelColor)
+            put("tarawihBgPreset", config.tarawihBgPreset)
+            put("customTarawihBgPath", config.customTarawihBgPath)
         }
         json.put("config", cfgJson)
+
+        val tarawihSchedules = repository.tarawihSchedulesFlow.first()
+        val tarawihArray = JSONArray()
+        for (t in tarawihSchedules) {
+            tarawihArray.put(JSONObject().apply {
+                put("night", t.night)
+                put("date", t.date)
+                put("penceramah", t.penceramah)
+                put("penceramahPhone", t.penceramahPhone)
+                put("judulKultum", t.judulKultum)
+                put("imamTarawih", t.imamTarawih)
+                put("imamTarawihPhone", t.imamTarawihPhone)
+                put("imamWitir", t.imamWitir)
+                put("imamWitirPhone", t.imamWitirPhone)
+                put("bilalTarawih", t.bilalTarawih)
+                put("bilalTarawihPhone", t.bilalTarawihPhone)
+                put("notes", t.notes)
+            })
+        }
+        json.put("tarawihSchedules", tarawihArray)
+        val activeNight = com.example.viewmodel.MasjidTVViewModel.resolveActiveTarawihNight(config, "")
+        json.put("activeTarawihNight", activeNight)
 
         val pbInfo = MurottalAudioPlayer.playbackInfo.value
         val pbJson = JSONObject().apply {
@@ -2856,6 +3083,7 @@ class LocalHttpServer(
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('tab-profil')">🏛️ Profil</button>
         <button class="tab-btn" onclick="switchTab('tab-waktu')">⏰ Sholat</button>
+        <button class="tab-btn" onclick="switchTab('tab-tarawih')">🌙 Tarawih Ramadhan</button>
         <button class="tab-btn" onclick="switchTab('tab-murottal')">🎧 Murottal & Qari</button>
         <button class="tab-btn" onclick="switchTab('tab-youtube')">🔴 Siaran Live & CCTV</button>
         <button class="tab-btn" onclick="switchTab('tab-keuangan')">💰 Keuangan</button>
@@ -3067,7 +3295,8 @@ class LocalHttpServer(
                     <h3 style="font-size:14px; margin:14px 0 8px; color:var(--primary);">Durasi Countdown Jeda Iqomah (Menit)</h3>
                     <div class="grid-2">
                         <div class="form-group"><label>Iqomah Subuh</label><input type="number" id="iqSubuh" class="form-control"></div>
-                        <div class="form-group"><label>Iqomah Dzuhur</label><input type="number" id="iqDzuhur" class="form-control"></div>
+                        <div class="form-group"><label>Iqomah Dzuhur (Hari Biasa)</label><input type="number" id="iqDzuhur" class="form-control"></div>
+                        <div class="form-group"><label>🕌 Iqomah Khusus Sholat Jum'at</label><input type="number" id="iqJumat" class="form-control" placeholder="15"></div>
                         <div class="form-group"><label>Iqomah Ashar</label><input type="number" id="iqAshar" class="form-control"></div>
                         <div class="form-group"><label>Iqomah Maghrib</label><input type="number" id="iqMaghrib" class="form-control"></div>
                         <div class="form-group"><label>Iqomah Isya'</label><input type="number" id="iqIsya" class="form-control"></div>
@@ -3184,6 +3413,216 @@ class LocalHttpServer(
 
                 <h3 style="font-size: 14px; margin: 18px 0 8px; color: var(--primary);">Daftar Jadwal Imam Khusus Aktif</h3>
                 <ul class="item-list" id="specialImamList"></ul>
+            </div>
+        </div>
+
+        <!-- TAB TARAWIH RAMADHAN -->
+        <div id="tab-tarawih" class="section-tab">
+            <!-- 1. PENGATURAN GLOBAL TARAWIH & TAMPILAN TV -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🌙 Pengaturan Global & Layar Tarawih Ramadhan</h2>
+                    <span style="background:rgba(245,158,11,0.2); color:#F59E0B; font-size:11px; font-weight:700; padding:3px 8px; border-radius:12px; border:1px solid rgba(245,158,11,0.4);">Spesial Ramadhan</span>
+                </div>
+                <form id="formTarawihConfig" onsubmit="saveTarawihConfigForm(event)">
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#FDE68A; font-size:14px;">
+                            <input type="checkbox" id="cfgTarawihEnabled" style="width:20px; height:20px; accent-color:#10B981;">
+                            <span>Aktifkan Fitur & Tampilan Khusus Tarawih Ramadhan</span>
+                        </label>
+                        <small style="color:#94A3B8; font-size:11.5px; display:block; margin-top:4px;">
+                            Jika aktif, TV akan otomatis menampilkan slide petugas Tarawih di Carousel dan menjalankan layar khusus Tarawih (Kultum & Sholat) saat waktu Isya' tiba.
+                        </small>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>⚙️ Mode Deteksi Malam Tarawih</label>
+                            <select id="cfgTarawihAutoDetect" class="form-control" onchange="toggleTarawihModeDisplay()">
+                                <option value="true">Otomatis (Sesuai Tanggal Kalender Hijriyah TV)</option>
+                                <option value="false">Manual (Pilih Malam Tarawih Tertentu)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="groupTarawihManualNight" style="display:none;">
+                            <label>🌙 Pilih Malam Tarawih Aktif</label>
+                            <select id="cfgTarawihManualNight" class="form-control">
+                                <!-- Generated 1 to 30 -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#FFFFFF; font-size:13px;">
+                            <input type="checkbox" id="cfgTarawihShowSlide" style="width:18px; height:18px; accent-color:#10B981;">
+                            <span>Tampilkan Slide Petugas Tarawih di Rotasi Carousel Layar TV</span>
+                        </label>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>⏳ Durasi Layar Kultum / Ceramah Tarawih (Menit)</label>
+                            <input type="number" id="cfgTarawihKultumMinutes" class="form-control" min="1" max="60" value="15">
+                            <small style="color:#94A3B8; font-size:11px;">Durasi tayang penceramah & judul kultum ba'da Isya'</small>
+                        </div>
+                        <div class="form-group">
+                            <label>🕌 Durasi Layar Sholat Tarawih & Witir (Menit)</label>
+                            <input type="number" id="cfgTarawihSholatMinutes" class="form-control" min="5" max="120" value="20">
+                            <small style="color:#94A3B8; font-size:11px;">Durasi mode hening sholat tarawih & witir berlangsung</small>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>🖼️ Preset Background Slide Tarawih</label>
+                            <select id="cfgTarawihBgPreset" class="form-control">
+                                <option value="DEFAULT_ISLAMIC">Emerald Islamic Luxury (Default)</option>
+                                <option value="RAMADHAN_LANTERN">Lentera Ramadhan Emas (Lantern Glow)</option>
+                                <option value="MOSQUE_NIGHT">Masjid Malam Bertabur Bintang (Midnight Blue)</option>
+                                <option value="GOLD_LUXURY">Gold Royal Arabesque (Kemilau Emas)</option>
+                                <option value="MINIMAL_DARK">Minimalis Elegan Modern (Deep Emerald)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display:flex; flex-direction:column; justify-content:flex-end;">
+                            <button type="button" class="btn-secondary" onclick="openTarawihCustomizationModal()" style="padding:10px; font-weight:bold; color:#FDE68A; border-color:#F59E0B;">
+                                🎨 Kustomisasi Teks & Warna Layar Tarawih
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top:8px;">💾 Simpan Pengaturan Tarawih</button>
+                </form>
+            </div>
+
+            <!-- 2. FORM JADWAL PETUGAS 30 MALAM TARAWIH -->
+            <div class="card">
+                <div class="card-header" style="flex-wrap:wrap; gap:8px;">
+                    <div>
+                        <h2>📋 Jadwal Petugas Tarawih & Kultum (30 Malam)</h2>
+                        <div style="font-size:12px; color:#94A3B8;">Atur penceramah, imam sholat tarawih, imam witir, dan bilal per malam</div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn-secondary" onclick="populateDefaultTarawih()" style="font-size:12px; padding:6px 12px; color:#6EE7B7; border-color:#10B981;" title="Isi otomatis 30 malam dengan format default">✨ Auto-Isi 30 Malam</button>
+                    </div>
+                </div>
+
+                <!-- Night Selector Pills Bar -->
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label style="font-size:12px; font-weight:700; color:#FDE68A;">PILIH MALAM RAMADHAN:</label>
+                        <select id="selQuickNight" class="form-control" style="width:auto; padding:4px 10px; font-size:12px;" onchange="switchTarawihNight(parseInt(this.value))">
+                            <!-- Populated with Malam 1 to 30 -->
+                        </select>
+                    </div>
+                    <div id="tarawihNightPills" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; scrollbar-width:thin;">
+                        <!-- Generated 30 pill buttons -->
+                    </div>
+                </div>
+
+                <!-- Alert Banner for Selected Night -->
+                <div id="tarawihNightAlert" class="alert-info" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; background:rgba(245,158,11,0.15); border:1.5px solid #F59E0B; border-radius:8px; padding:10px 14px; color:#FDE68A;">
+                    <div id="tarawihNightAlertText">Mengedit Jadwal Malam ke-1 Ramadhan</div>
+                    <span id="tarawihNightLiveBadge" class="badge-tag" style="display:none; background:#10B981; color:#06281D; font-weight:bold; padding:2px 8px; border-radius:6px; font-size:11px;">🟢 SEDANG TAYANG DI TV</span>
+                </div>
+
+                <form id="formTarawihNight" onsubmit="saveTarawihNightForm(event)">
+                    <input type="hidden" id="tarawihFormNight" value="1">
+
+                    <div class="form-group">
+                        <label>📅 Keterangan Tanggal Masehi / Keterangan Malam</label>
+                        <input type="text" id="tarawihDate" class="form-control" placeholder="Contoh: 1 Ramadhan 1447 H / 28 Feb 2025" required>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>🎙️ Nama Penceramah / Kultum</label>
+                            <input type="text" id="tarawihPenceramah" class="form-control" placeholder="Contoh: Ustadz Dr. H. Abdullah, M.Ag">
+                        </div>
+                        <div class="form-group">
+                            <label>📱 No. WhatsApp Penceramah</label>
+                            <input type="text" id="tarawihPenceramahPhone" class="form-control" placeholder="Contoh: 08123456789">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📖 Judul Ceramah / Tema Kultum Tarawih</label>
+                        <input type="text" id="tarawihJudulKultum" class="form-control" placeholder="Contoh: Meraih Keberkahan di Awal Ramadhan">
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>🕌 Nama Imam Sholat Tarawih</label>
+                            <input type="text" id="tarawihImamTarawih" class="form-control" placeholder="Contoh: Ustadz Ahmad Fauzi, S.Pd.I">
+                        </div>
+                        <div class="form-group">
+                            <label>📱 No. WhatsApp Imam Tarawih</label>
+                            <input type="text" id="tarawihImamTarawihPhone" class="form-control" placeholder="Contoh: 08123456789">
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>🌙 Nama Imam Sholat Witir</label>
+                            <input type="text" id="tarawihImamWitir" class="form-control" placeholder="Contoh: Ustadz Ahmad Fauzi / Sesuai Tarawih">
+                        </div>
+                        <div class="form-group">
+                            <label>📱 No. WhatsApp Imam Witir</label>
+                            <input type="text" id="tarawihImamWitirPhone" class="form-control" placeholder="Contoh: 08123456789">
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>📢 Nama Bilal / Muadzin Tarawih</label>
+                            <input type="text" id="tarawihBilal" class="form-control" placeholder="Contoh: Ustadz Bilal Ramadhan">
+                        </div>
+                        <div class="form-group">
+                            <label>📱 No. WhatsApp Bilal</label>
+                            <input type="text" id="tarawihBilalPhone" class="form-control" placeholder="Contoh: 08123456789">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📝 Catatan Tambahan (Opsional)</label>
+                        <input type="text" id="tarawihNotes" class="form-control" placeholder="Contoh: Petugas buka puasa bersama takmir">
+                    </div>
+
+                    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:16px;">
+                        <button type="submit" class="btn-primary" style="flex:2; min-width:200px; padding:12px; font-size:14px;">💾 Simpan Petugas Malam Ini</button>
+                        <button type="button" onclick="sendWaTarawihBroadcast()" style="flex:1; min-width:180px; padding:12px; font-size:13px; font-weight:bold; background:#25D366; color:#06281D; border:none; border-radius:8px; cursor:pointer;" title="Kirim pesan WhatsApp pengingat ke seluruh petugas malam ini">📱 Kirim WA Broadcast</button>
+                        <button type="button" class="btn-gold" onclick="simulateTarawihTv()" style="flex:1; min-width:180px; padding:12px; font-size:13px; font-weight:bold;" title="Tampilkan simulasi slide / layar tarawih di TV sekarang">📺 Simulasi TV</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 3. TABEL RINGKASAN JADWAL 30 MALAM -->
+            <div class="card">
+                <div class="card-header" style="flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <h2>📊 Ringkasan Jadwal 30 Malam Ramadhan</h2>
+                        <div style="font-size:12px; color:#94A3B8;">Daftar lengkap penceramah dan imam dari malam ke-1 s/d ke-30</div>
+                    </div>
+                    <div style="width:240px;">
+                        <input type="text" id="tarawihSearchInput" class="form-control" placeholder="🔍 Cari nama / judul / malam..." oninput="filterTarawihTable()" style="padding:6px 12px; font-size:12px;">
+                    </div>
+                </div>
+
+                <div class="table-responsive" style="max-height:480px; overflow-y:auto;">
+                    <table class="data-table" id="tableTarawih">
+                        <thead>
+                            <tr>
+                                <th style="width:70px;">Malam</th>
+                                <th style="width:140px;">Tanggal</th>
+                                <th>Penceramah & Judul Kultum</th>
+                                <th>Imam Tarawih & Witir</th>
+                                <th>Bilal</th>
+                                <th style="width:110px; text-align:center;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tarawihTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -3313,6 +3752,48 @@ class LocalHttpServer(
                         <div class="form-group"><label>📱 No. WhatsApp Bilal</label><input type="text" id="friBilalPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
                     </div>
                     <div class="form-group"><label>📖 Catatan Khutbah / Jadwal</label><input type="text" id="friNotes" class="form-control" placeholder="Catatan tambahan (opsional)"></div>
+
+                    <!-- HARI RAYA SETTINGS CONTAINER (ONLY VISIBLE ON WEEK 6 & 7) -->
+                    <div id="friHariRayaConfigBox" style="display:none; margin:14px 0; background:rgba(16,185,129,0.08); border:1.5px solid #10B981; border-radius:10px; padding:14px;">
+                        <h3 id="lblHariRayaBoxTitle" style="font-size:14px; font-weight:bold; color:#10B981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                            <span>⚙️</span> Pengaturan Waktu Pelaksanaan Sholat Hari Raya
+                        </h3>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#FDE68A;">
+                                <input type="checkbox" id="friHariRayaEnabled" style="width:20px; height:20px; accent-color:#10B981;">
+                                <span id="lblHariRayaEnabled">Aktifkan Otomatisasi Waktu Sholat Hari Raya di Layar TV</span>
+                            </label>
+                            <small style="color:#94A3B8; font-size:11.5px; display:block; margin-top:4px;">
+                                Ketika tanggal & jam pelaksanaan tiba, TV akan secara otomatis menampilkan hitung mundur gema takbir, layar takbiran, dan mode hening sholat/khutbah.
+                            </small>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>📅 Tanggal Pelaksanaan (YYYY-MM-DD)</label>
+                                <input type="date" id="friHariRayaDate" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>⏰ Jam Pelaksanaan Sholat (HH:mm)</label>
+                                <input type="time" id="friHariRayaTime" class="form-control" value="06:30">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>⏳ Hitung Mundur Pra-Sholat (Menit)</label>
+                                <input type="number" id="friHariRayaIqomah" class="form-control" min="1" max="60" value="15">
+                            </div>
+                            <div class="form-group">
+                                <label>🕌 Durasi Layar Sholat & Khutbah (Menit)</label>
+                                <input type="number" id="friHariRayaSholat" class="form-control" min="3" max="120" value="20">
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed rgba(16,185,129,0.3);">
+                            <button type="button" class="btn-gold" id="btnSimulateHariRaya" onclick="simulateHariRayaTv()" style="width:100%; font-size:13px; font-weight:bold; padding:10px;">
+                                🚀 Uji Coba / Simulasi Layar Sholat Hari Raya di TV Sekarang
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="form-group" id="friApplyAllContainer" style="margin:12px 0 16px 0; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px dashed rgba(255,255,255,0.2);">
                         <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#FDE68A;">
                             <input type="checkbox" id="friApplyAll" style="width:20px; height:20px; accent-color:#10B981;">
@@ -4954,6 +5435,11 @@ class LocalHttpServer(
             if (document.getElementById('showActivitiesTab1')) document.getElementById('showActivitiesTab1').checked = actCheck;
             if (document.getElementById('showDailyMaklumatTab1')) document.getElementById('showDailyMaklumatTab1').checked = maklumatCheck;
 
+            // Render Tarawih Ramadhan
+            if (typeof renderTarawih === 'function') {
+                renderTarawih(data.tarawihSchedules || [], data.activeTarawihNight || 1, cfg);
+            }
+
             // Donation Program Form
             if (document.getElementById('cfgDonationTitle')) {
                 document.getElementById('cfgDonationTitle').value = cfg.donationProgramTitle || 'Renovasi Fasilitas Masjid';
@@ -5004,6 +5490,7 @@ class LocalHttpServer(
 
             document.getElementById('iqSubuh').value = cfg.iqomahSubuh || 10;
             document.getElementById('iqDzuhur').value = cfg.iqomahDzuhur || 10;
+            if (document.getElementById('iqJumat')) document.getElementById('iqJumat').value = cfg.iqomahJumat || 15;
             document.getElementById('iqAshar').value = cfg.iqomahAshar || 10;
             document.getElementById('iqMaghrib').value = cfg.iqomahMaghrib || 7;
             document.getElementById('iqIsya').value = cfg.iqomahIsya || 10;
@@ -6716,6 +7203,7 @@ class LocalHttpServer(
                 offsetIsya: document.getElementById('offIsya').value,
                 iqomahSubuh: document.getElementById('iqSubuh').value,
                 iqomahDzuhur: document.getElementById('iqDzuhur').value,
+                iqomahJumat: document.getElementById('iqJumat')?.value || 15,
                 iqomahAshar: document.getElementById('iqAshar').value,
                 iqomahMaghrib: document.getElementById('iqMaghrib').value,
                 iqomahIsya: document.getElementById('iqIsya').value,
@@ -7604,15 +8092,53 @@ class LocalHttpServer(
             document.getElementById('friImam').value = fri.imam || '';
             if (document.getElementById('friImamPhone')) document.getElementById('friImamPhone').value = fri.imamPhone || '';
             document.getElementById('friMuadzin').value = fri.muadzin || '';
-            if (document.getElementById('friMuadzinPhone')) document.getElementById('friMuadzinPhone').value = fri.muadzinPhone || '';
             document.getElementById('friBilal').value = fri.bilal || '';
             if (document.getElementById('friBilalPhone')) document.getElementById('friBilalPhone').value = fri.bilalPhone || '';
             document.getElementById('friNotes').value = fri.notes || '';
+
+            const hariRayaBox = document.getElementById('friHariRayaConfigBox');
+            if (hariRayaBox) {
+                if (weekNum >= 6) {
+                    hariRayaBox.style.display = 'block';
+                    const cfg = window.currentConfig || {};
+                    const lblBoxTitle = document.getElementById('lblHariRayaBoxTitle');
+                    const chkEnabled = document.getElementById('friHariRayaEnabled');
+                    const inpDate = document.getElementById('friHariRayaDate');
+                    const inpTime = document.getElementById('friHariRayaTime');
+                    const inpIqomah = document.getElementById('friHariRayaIqomah');
+                    const inpSholat = document.getElementById('friHariRayaSholat');
+
+                    if (weekNum === 6) {
+                        if (lblBoxTitle) lblBoxTitle.innerHTML = '<span>🎉</span> Pengaturan Waktu Pelaksanaan Sholat Idul Fitri';
+                        if (chkEnabled) chkEnabled.checked = (cfg.idulFitriEnabled !== undefined) ? cfg.idulFitriEnabled : true;
+                        if (inpDate) inpDate.value = cfg.idulFitriDate || '';
+                        if (inpTime) inpTime.value = cfg.idulFitriTime || '06:30';
+                        if (inpIqomah) inpIqomah.value = cfg.idulFitriIqomahMinutes || 15;
+                        if (inpSholat) inpSholat.value = cfg.idulFitriSholatMinutes || 20;
+                    } else {
+                        if (lblBoxTitle) lblBoxTitle.innerHTML = '<span>🐑</span> Pengaturan Waktu Pelaksanaan Sholat Idul Adha';
+                        if (chkEnabled) chkEnabled.checked = (cfg.idulAdhaEnabled !== undefined) ? cfg.idulAdhaEnabled : true;
+                        if (inpDate) inpDate.value = cfg.idulAdhaDate || '';
+                        if (inpTime) inpTime.value = cfg.idulAdhaTime || '06:30';
+                        if (inpIqomah) inpIqomah.value = cfg.idulAdhaIqomahMinutes || 15;
+                        if (inpSholat) inpSholat.value = cfg.idulAdhaSholatMinutes || 20;
+                    }
+                } else {
+                    hariRayaBox.style.display = 'none';
+                }
+            }
         }
 
         function switchFridayWeek(weekNum) {
             window.userSelectedFridayWeek = true;
             renderFridayWeek(weekNum);
+        }
+
+        async function simulateHariRayaTv() {
+            const weekNum = window.currentFriWeek || 6;
+            const action = (weekNum === 7) ? 'idul_adha_sim' : 'idul_fitri_sim';
+            await triggerAction(action);
+            showToast('Simulasi Layar Sholat Hari Raya Berhasil Ditampilkan di TV!');
         }
 
         async function saveFriday(e) {
@@ -7634,6 +8160,19 @@ class LocalHttpServer(
                 bilalPhone: document.getElementById('friBilalPhone')?.value || '',
                 notes: document.getElementById('friNotes').value
             };
+            if (weekNum === 6) {
+                payload.idulFitriEnabled = document.getElementById('friHariRayaEnabled')?.checked || false;
+                payload.idulFitriDate = document.getElementById('friHariRayaDate')?.value || '';
+                payload.idulFitriTime = document.getElementById('friHariRayaTime')?.value || '06:30';
+                payload.idulFitriIqomahMinutes = parseInt(document.getElementById('friHariRayaIqomah')?.value) || 15;
+                payload.idulFitriSholatMinutes = parseInt(document.getElementById('friHariRayaSholat')?.value) || 20;
+            } else if (weekNum === 7) {
+                payload.idulAdhaEnabled = document.getElementById('friHariRayaEnabled')?.checked || false;
+                payload.idulAdhaDate = document.getElementById('friHariRayaDate')?.value || '';
+                payload.idulAdhaTime = document.getElementById('friHariRayaTime')?.value || '06:30';
+                payload.idulAdhaIqomahMinutes = parseInt(document.getElementById('friHariRayaIqomah')?.value) || 15;
+                payload.idulAdhaSholatMinutes = parseInt(document.getElementById('friHariRayaSholat')?.value) || 20;
+            }
             await fetch('/api/save-friday', { method: 'POST', body: JSON.stringify(payload) });
             const toastMsg = (weekNum === 6) ? 'Petugas Sholat Idul Fitri Berhasil Disimpan!' : ((weekNum === 7) ? 'Petugas Sholat Idul Adha Berhasil Disimpan!' : 'Petugas Jum\'at Berhasil Disimpan & Diperbarui di TV!');
             showToast(toastMsg);
@@ -8412,6 +8951,374 @@ class LocalHttpServer(
                     loadStatus();
                 }
             }
+        }
+
+        // --- TARAWIH RAMADHAN JAVASCRIPT FUNCTIONS ---
+        window.currentTarawihList = [];
+        window.currentTarawihActiveNight = 1;
+        window.selectedTarawihNight = 1;
+
+        function toggleTarawihModeDisplay() {
+            const isAuto = document.getElementById('cfgTarawihAutoDetect').value === 'true';
+            const groupManual = document.getElementById('groupTarawihManualNight');
+            if (groupManual) groupManual.style.display = isAuto ? 'none' : 'block';
+        }
+
+        function renderTarawih(list, activeNight, cfg) {
+            window.currentTarawihList = list || [];
+            window.currentTarawihActiveNight = activeNight || 1;
+            if (!window.selectedTarawihNight) window.selectedTarawihNight = activeNight || 1;
+
+            // Global Config Elements
+            const chkEnabled = document.getElementById('cfgTarawihEnabled');
+            if (chkEnabled) chkEnabled.checked = cfg.tarawihEnabled !== false;
+
+            const selAuto = document.getElementById('cfgTarawihAutoDetect');
+            if (selAuto) selAuto.value = (cfg.tarawihAutoDetectNight !== false) ? 'true' : 'false';
+
+            const selManual = document.getElementById('cfgTarawihManualNight');
+            if (selManual) {
+                let opts = '';
+                for (let n = 1; n <= 30; n++) {
+                    opts += '<option value="' + n + '"' + (cfg.tarawihManualNight === n ? ' selected' : '') + '>Malam ke-' + n + ' Ramadhan</option>';
+                }
+                selManual.innerHTML = opts;
+            }
+            toggleTarawihModeDisplay();
+
+            const chkSlide = document.getElementById('cfgTarawihShowSlide');
+            if (chkSlide) chkSlide.checked = cfg.tarawihShowSlide !== false;
+
+            const numKultum = document.getElementById('cfgTarawihKultumMinutes');
+            if (numKultum) numKultum.value = cfg.tarawihKultumMinutes || 15;
+
+            const numSholat = document.getElementById('cfgTarawihSholatMinutes');
+            if (numSholat) numSholat.value = cfg.tarawihSholatMinutes || 20;
+
+            const selPreset = document.getElementById('cfgTarawihBgPreset');
+            if (selPreset) selPreset.value = cfg.tarawihBgPreset || 'DEFAULT_ISLAMIC';
+
+            // Populate Quick Select Dropdown
+            const quickSel = document.getElementById('selQuickNight');
+            if (quickSel) {
+                let qOpts = '';
+                for (let n = 1; n <= 30; n++) {
+                    const isCur = (n === window.selectedTarawihNight);
+                    const isAct = (n === window.currentTarawihActiveNight);
+                    qOpts += '<option value="' + n + '"' + (isCur ? ' selected' : '') + '>Malam ke-' + n + (isAct ? ' (🟢 Aktif di TV)' : '') + '</option>';
+                }
+                quickSel.innerHTML = qOpts;
+            }
+
+            // Populate Night Pills Bar
+            const pillsContainer = document.getElementById('tarawihNightPills');
+            if (pillsContainer) {
+                let pillsHtml = '';
+                for (let n = 1; n <= 30; n++) {
+                    const isCur = (n === window.selectedTarawihNight);
+                    const isAct = (n === window.currentTarawihActiveNight);
+                    const bg = isCur ? '#F59E0B' : (isAct ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.08)');
+                    const color = isCur ? '#06281D' : '#FFFFFF';
+                    const border = isCur ? '#F59E0B' : (isAct ? '#10B981' : 'rgba(255,255,255,0.15)');
+                    const badge = isAct ? ' <span style="font-size:9px; background:#10B981; color:#06281D; padding:1px 4px; border-radius:4px; font-weight:800;">LIVE</span>' : '';
+
+                    pillsHtml += '<button type="button" onclick="switchTarawihNight(' + n + ')" style="padding:6px 12px; font-size:12px; font-weight:700; border-radius:8px; white-space:nowrap; cursor:pointer; background:' + bg + '; color:' + color + '; border:1.5px solid ' + border + '; display:inline-flex; align-items:center; gap:4px;">' +
+                        'Malam ' + n + badge +
+                    '</button>';
+                }
+                pillsContainer.innerHTML = pillsHtml;
+            }
+
+            // Populate Form for Selected Night
+            renderTarawihFormForNight(window.selectedTarawihNight);
+
+            // Populate Summary Table
+            renderTarawihTable(window.currentTarawihList);
+        }
+
+        function switchTarawihNight(nightNum) {
+            window.selectedTarawihNight = nightNum;
+            const quickSel = document.getElementById('selQuickNight');
+            if (quickSel) quickSel.value = nightNum;
+
+            // Re-render pills highlight
+            const pillsContainer = document.getElementById('tarawihNightPills');
+            if (pillsContainer) {
+                const buttons = pillsContainer.querySelectorAll('button');
+                buttons.forEach((btn, idx) => {
+                    const n = idx + 1;
+                    const isCur = (n === window.selectedTarawihNight);
+                    const isAct = (n === window.currentTarawihActiveNight);
+                    btn.style.background = isCur ? '#F59E0B' : (isAct ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.08)');
+                    btn.style.color = isCur ? '#06281D' : '#FFFFFF';
+                    btn.style.borderColor = isCur ? '#F59E0B' : (isAct ? '#10B981' : 'rgba(255,255,255,0.15)');
+                });
+            }
+
+            renderTarawihFormForNight(nightNum);
+        }
+
+        function renderTarawihFormForNight(nightNum) {
+            const list = window.currentTarawihList || [];
+            const item = list.find(t => t.night === nightNum) || {
+                night: nightNum,
+                date: 'Malam ke-' + nightNum + ' Ramadhan',
+                penceramah: '', penceramahPhone: '', judulKultum: '',
+                imamTarawih: '', imamTarawihPhone: '',
+                imamWitir: '', imamWitirPhone: '',
+                bilalTarawih: '', bilalTarawihPhone: '',
+                notes: ''
+            };
+
+            document.getElementById('tarawihFormNight').value = nightNum;
+            document.getElementById('tarawihDate').value = item.date || ('Malam ke-' + nightNum + ' Ramadhan');
+            document.getElementById('tarawihPenceramah').value = item.penceramah || '';
+            document.getElementById('tarawihPenceramahPhone').value = item.penceramahPhone || '';
+            document.getElementById('tarawihJudulKultum').value = item.judulKultum || '';
+            document.getElementById('tarawihImamTarawih').value = item.imamTarawih || '';
+            document.getElementById('tarawihImamTarawihPhone').value = item.imamTarawihPhone || '';
+            document.getElementById('tarawihImamWitir').value = item.imamWitir || '';
+            document.getElementById('tarawihImamWitirPhone').value = item.imamWitirPhone || '';
+            document.getElementById('tarawihBilal').value = item.bilalTarawih || '';
+            document.getElementById('tarawihBilalPhone').value = item.bilalTarawihPhone || '';
+            document.getElementById('tarawihNotes').value = item.notes || '';
+
+            const isAct = (nightNum === window.currentTarawihActiveNight);
+            const alertText = document.getElementById('tarawihNightAlertText');
+            const alertBadge = document.getElementById('tarawihNightLiveBadge');
+            const alertBox = document.getElementById('tarawihNightAlert');
+
+            if (alertText) {
+                alertText.innerHTML = '🌙 <strong>Jadwal Petugas Malam ke-' + nightNum + ' Ramadhan</strong>' + (isAct ? ' (Sedang Tayang di Layar TV)' : '');
+            }
+            if (alertBadge) {
+                alertBadge.style.display = isAct ? 'inline-block' : 'none';
+            }
+            if (alertBox) {
+                if (isAct) {
+                    alertBox.style.background = 'rgba(16,185,129,0.18)';
+                    alertBox.style.borderColor = '#10B981';
+                    alertBox.style.color = '#A7F3D0';
+                } else {
+                    alertBox.style.background = 'rgba(245,158,11,0.15)';
+                    alertBox.style.borderColor = '#F59E0B';
+                    alertBox.style.color = '#FDE68A';
+                }
+            }
+        }
+
+        function renderTarawihTable(list) {
+            const tbody = document.getElementById('tarawihTableBody');
+            if (!tbody) return;
+
+            let html = '';
+            for (let n = 1; n <= 30; n++) {
+                const item = list.find(t => t.night === n) || {
+                    night: n,
+                    date: 'Malam ke-' + n + ' Ramadhan',
+                    penceramah: '-', judulKultum: '-',
+                    imamTarawih: '-', imamWitir: '-',
+                    bilalTarawih: '-'
+                };
+
+                const isAct = (n === window.currentTarawihActiveNight);
+                const isCur = (n === window.selectedTarawihNight);
+                const rowBg = isCur ? 'rgba(245,158,11,0.1)' : (isAct ? 'rgba(16,185,129,0.1)' : '');
+
+                const penceramahText = (item.penceramah && item.penceramah !== '-') ? ('<strong>' + escapeHtml(item.penceramah) + '</strong>' + (item.judulKultum ? '<div style="font-size:11px; color:#FDE68A;">📖 ' + escapeHtml(item.judulKultum) + '</div>' : '')) : '<span style="color:#64748B;">-</span>';
+                const imamText = (item.imamTarawih && item.imamTarawih !== '-') ? ('🕌 ' + escapeHtml(item.imamTarawih) + (item.imamWitir ? '<div style="font-size:11px; color:#94A3B8;">🌙 Witir: ' + escapeHtml(item.imamWitir) + '</div>' : '')) : '<span style="color:#64748B;">-</span>';
+                const bilalText = (item.bilalTarawih && item.bilalTarawih !== '-') ? ('📢 ' + escapeHtml(item.bilalTarawih)) : '<span style="color:#64748B;">-</span>';
+
+                html += '<tr style="' + (rowBg ? 'background:' + rowBg + ';' : '') + '">' +
+                    '<td style="font-weight:bold; color:' + (isAct ? '#10B981' : '#FDE68A') + ';">Malam ' + n + (isAct ? ' 🟢' : '') + '</td>' +
+                    '<td style="font-size:11.5px;">' + escapeHtml(item.date || ('Malam ke-' + n)) + '</td>' +
+                    '<td>' + penceramahText + '</td>' +
+                    '<td>' + imamText + '</td>' +
+                    '<td>' + bilalText + '</td>' +
+                    '<td style="text-align:center;">' +
+                        '<button type="button" class="btn-secondary" onclick="switchTarawihNight(' + n + '); document.getElementById(\'tab-tarawih\').scrollIntoView({behavior:\'smooth\'});" style="font-size:11px; padding:4px 8px; margin-right:4px;">✏️ Edit</button>' +
+                        '<button type="button" class="btn-whatsapp" onclick="sendWaTarawihBroadcast(' + n + ')" style="font-size:11px; padding:4px 6px; background:#25D366; color:#06281D; border:none; border-radius:4px; font-weight:bold; cursor:pointer;" title="Kirim WA Petugas Malam ' + n + '">📱</button>' +
+                    '</td>' +
+                '</tr>';
+            }
+            tbody.innerHTML = html;
+        }
+
+        function filterTarawihTable() {
+            const q = (document.getElementById('tarawihSearchInput').value || '').toLowerCase().trim();
+            const rows = document.querySelectorAll('#tableTarawih tbody tr');
+            rows.forEach(r => {
+                const text = r.innerText.toLowerCase();
+                r.style.display = (!q || text.includes(q)) ? '' : 'none';
+            });
+        }
+
+        async function saveTarawihNightForm(e) {
+            e.preventDefault();
+            const night = parseInt(document.getElementById('tarawihFormNight').value) || 1;
+            const payload = {
+                night: night,
+                date: document.getElementById('tarawihDate').value.trim() || ('Malam ke-' + night + ' Ramadhan'),
+                penceramah: document.getElementById('tarawihPenceramah').value.trim(),
+                penceramahPhone: document.getElementById('tarawihPenceramahPhone').value.trim(),
+                judulKultum: document.getElementById('tarawihJudulKultum').value.trim(),
+                imamTarawih: document.getElementById('tarawihImamTarawih').value.trim(),
+                imamTarawihPhone: document.getElementById('tarawihImamTarawihPhone').value.trim(),
+                imamWitir: document.getElementById('tarawihImamWitir').value.trim(),
+                imamWitirPhone: document.getElementById('tarawihImamWitirPhone').value.trim(),
+                bilalTarawih: document.getElementById('tarawihBilal').value.trim(),
+                bilalTarawihPhone: document.getElementById('tarawihBilalPhone').value.trim(),
+                notes: document.getElementById('tarawihNotes').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/save-tarawih', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(payload).toString()
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('✅ Petugas Tarawih Malam ke-' + night + ' berhasil disimpan!');
+                    await loadStatus();
+                } else {
+                    alert('Gagal menyimpan: ' + (data.message || 'Terjadi kesalahan'));
+                }
+            } catch (err) {
+                alert('Gagal koneksi ke server: ' + err.message);
+            }
+        }
+
+        async function saveTarawihConfigForm(e) {
+            e.preventDefault();
+            const payload = {
+                isConfigOnly: 'true',
+                tarawihEnabled: document.getElementById('cfgTarawihEnabled').checked ? 'true' : 'false',
+                tarawihAutoDetectNight: document.getElementById('cfgTarawihAutoDetect').value === 'true' ? 'true' : 'false',
+                tarawihManualNight: document.getElementById('cfgTarawihManualNight').value || '1',
+                tarawihShowSlide: document.getElementById('cfgTarawihShowSlide').checked ? 'true' : 'false',
+                tarawihKultumMinutes: document.getElementById('cfgTarawihKultumMinutes').value || '15',
+                tarawihSholatMinutes: document.getElementById('cfgTarawihSholatMinutes').value || '20',
+                tarawihBgPreset: document.getElementById('cfgTarawihBgPreset').value || 'DEFAULT_ISLAMIC'
+            };
+
+            try {
+                const res = await fetch('/api/save-tarawih', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(payload).toString()
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('✅ Pengaturan Tarawih Ramadhan berhasil disimpan!');
+                    await loadStatus();
+                } else {
+                    alert('Gagal menyimpan: ' + (data.message || 'Terjadi kesalahan'));
+                }
+            } catch (err) {
+                alert('Gagal koneksi: ' + err.message);
+            }
+        }
+
+        async function populateDefaultTarawih() {
+            if (!confirm('Auto-isi 30 malam Tarawih dengan format dan tanggal default Ramadhan? Jadwal yang sudah ada akan disesuaikan.')) return;
+            try {
+                const res = await fetch('/api/populate-tarawih', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('✨ 30 Malam Tarawih berhasil di-generate!');
+                    await loadStatus();
+                } else {
+                    alert('Gagal generate: ' + (data.message || 'Error'));
+                }
+            } catch (err) {
+                alert('Gagal koneksi: ' + err.message);
+            }
+        }
+
+        async function simulateTarawihTv() {
+            try {
+                const res = await fetch('/api/trigger-tarawih_sim', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('📺 Layar Simulasi Tarawih sedang tampil di TV!');
+                } else {
+                    alert('Gagal simulasi: ' + (data.message || 'Error'));
+                }
+            } catch (err) {
+                alert('Gagal koneksi: ' + err.message);
+            }
+        }
+
+        async function sendWaTarawihBroadcast(nightNum) {
+            const n = nightNum || parseInt(document.getElementById('tarawihFormNight').value) || 1;
+            if (!confirm('Kirim pesan WhatsApp pengingat kepada seluruh petugas Sholat Tarawih Malam ke-' + n + '?')) return;
+
+            try {
+                const res = await fetch('/api/wa-gateway/send-tarawih-reminder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ night: n }).toString()
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    alert('✅ ' + data.message);
+                } else {
+                    alert('⚠️ ' + data.message);
+                }
+            } catch (err) {
+                alert('Gagal menghubungi server WA Gateway: ' + err.message);
+            }
+        }
+
+        // --- MODAL KUSTOMISASI TARAWIH ---
+        function openTarawihCustomizationModal() {
+            const cfg = window.currentConfig || {};
+            const html = '<form onsubmit="handleSaveTarawihCustomization(event)">' +
+                '<div style="background:#FFFBEB; border:1.5px solid #F59E0B; border-radius:10px; padding:14px; margin-bottom:14px;">' +
+                    '<div style="font-weight:700; font-size:13px; color:#F59E0B; margin-bottom:10px;">🌙 JUDUL SLIDE TARAWIH</div>' +
+                    '<div style="margin-bottom:10px;">' +
+                        '<label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#0F172A; font-weight:700;">Teks Judul Slide Tarawih</label>' +
+                        '<input type="text" id="custTarawihTitle" class="form-input" style="width:100%;" value="' + escapeHtml(cfg.tarawihTitleText || 'PETUGAS SHOLAT TARAWIH & WITIR') + '" required>' +
+                    '</div>' +
+                    makeColorRow('Warna Font Judul', 'custTarawihTitleColorPick', 'custTarawihTitleColor', '#F59E0B', cfg.tarawihTitleColor) +
+                '</div>' +
+                '<div style="background:#F0FDF4; border:1.5px solid #10B981; border-radius:10px; padding:14px; margin-bottom:16px;">' +
+                    '<div style="font-weight:700; font-size:13px; color:#10B981; margin-bottom:10px;">🎨 WARNA FONT PETUGAS TARAWIH</div>' +
+                    makeColorRow('Warna Nama Petugas (Penceramah, Imam, Bilal)', 'custTarawihOfficerPick', 'custTarawihOfficerColor', '#FFFFFF', cfg.tarawihOfficerNameColor) +
+                    makeColorRow('Warna Label Jabatan & Judul Ceramah', 'custTarawihLabelPick', 'custTarawihLabelColor', '#94A3B8', cfg.tarawihOfficerLabelColor) +
+                '</div>' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">' +
+                    '<button type="button" class="btn-secondary" onclick="resetTarawihCustomization()" style="width:auto; font-size:12px; padding:8px 12px; color:#FCA5A5; border-color:#EF4444;">🔄 Reset Default</button>' +
+                    '<div style="display:flex; gap:8px;">' +
+                        '<button type="button" class="btn-secondary" onclick="closeUniversalModal()" style="width:auto; padding:8px 14px;">Batal</button>' +
+                        '<button type="submit" class="btn-primary" style="width:auto; padding:8px 16px;">💾 Simpan ke TV</button>' +
+                    '</div>' +
+                '</div>' +
+            '</form>';
+            openUniversalModal('🌙 Kustomisasi Layar Tarawih Ramadhan', html);
+        }
+
+        async function handleSaveTarawihCustomization(e) {
+            e.preventDefault();
+            const payload = {
+                tarawihTitleText: document.getElementById('custTarawihTitle').value.trim() || 'PETUGAS SHOLAT TARAWIH & WITIR',
+                tarawihTitleColor: document.getElementById('custTarawihTitleColor').value.trim() || '#F59E0B',
+                tarawihOfficerNameColor: document.getElementById('custTarawihOfficerColor').value.trim() || '#FFFFFF',
+                tarawihOfficerLabelColor: document.getElementById('custTarawihLabelColor').value.trim() || '#94A3B8'
+            };
+            await saveContentCustomization(payload, 'Kustomisasi Teks & Warna Layar Tarawih Berhasil Disimpan!');
+        }
+
+        async function resetTarawihCustomization() {
+            if (!confirm('Kembalikan teks dan warna layar Tarawih ke setelan bawaan?')) return;
+            const payload = {
+                tarawihTitleText: 'PETUGAS SHOLAT TARAWIH & WITIR',
+                tarawihTitleColor: '#F59E0B',
+                tarawihOfficerNameColor: '#FFFFFF',
+                tarawihOfficerLabelColor: '#94A3B8'
+            };
+            await saveContentCustomization(payload, 'Kustomisasi Layar Tarawih dikembalikan ke default!');
         }
 
         checkAuthAndInit();

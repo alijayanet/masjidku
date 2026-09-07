@@ -61,6 +61,8 @@ data class MasjidTVUiState(
     val activeKhotibName: String = "",
     val activeBilalName: String = "",
     val isFridayPrayer: Boolean = false,
+    val isHariRaya: Boolean = false,
+    val hariRayaEventTitle: String = "",
     val iqomahRemainingSeconds: Int = 600,
     val sholatSilentRemainingSeconds: Int = 600,
     val dailyImamSchedules: List<DailyImamSchedule> = emptyList(),
@@ -69,6 +71,9 @@ data class MasjidTVUiState(
     val murottalQariName: String = "",
     val murottalSurahName: String = "",
     val allMurottalAudios: List<MurottalAudioItem> = emptyList(),
+    val tarawihSchedules: List<TarawihSchedule> = emptyList(),
+    val activeTarawihSchedule: TarawihSchedule? = null,
+    val activeTarawihNight: Int = 1,
     val localIpAddress: String = "127.0.0.1",
     val serverUrl: String = "http://127.0.0.1:8080",
     val qrCodeBitmap: ImageBitmap? = null,
@@ -128,6 +133,9 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                         "sholat" -> triggerSholatSilentManual(10, forceFriday = false)
                         "play_murottal" -> playMurottalManual()
                         "stop_murottal" -> stopMurottalManual()
+                        "idul_fitri_sim" -> triggerIdulFitriManual()
+                        "idul_adha_sim" -> triggerIdulAdhaManual()
+                        "tarawih_sim" -> triggerTarawihManual()
                         "stop_fullscreen_video" -> stopFullscreenVideo()
                         "stop_fullscreen_cctv" -> stopFullscreenCctv()
                         "reset" -> resetToNormalMode()
@@ -234,6 +242,20 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                 }
             }
         }
+
+        viewModelScope.launch {
+            repository.tarawihSchedulesFlow.collect { list ->
+                val night = resolveActiveTarawihNight(_uiState.value.config, _uiState.value.prayerSchedule?.hijriDateStr)
+                val activeSchedule = list.find { it.night == night } ?: list.firstOrNull()
+                _uiState.update {
+                    it.copy(
+                        tarawihSchedules = list,
+                        activeTarawihNight = night,
+                        activeTarawihSchedule = activeSchedule
+                    )
+                }
+            }
+        }
     }
 
     private fun startClockAndPrayerEngine() {
@@ -276,13 +298,19 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                         return -1
                     }
 
-                    val prayerCheckList = listOf(
+                    val prayerCheckList = mutableListOf(
                         PrayerName.SUBUH to parseSeconds(schedule.subuh),
                         PrayerName.DZUHUR to parseSeconds(schedule.dzuhur),
                         PrayerName.ASHAR to parseSeconds(schedule.ashar),
                         PrayerName.MAGHRIB to parseSeconds(schedule.maghrib),
                         PrayerName.ISYA to parseSeconds(schedule.isya)
                     )
+                    if (config.idulFitriEnabled && config.idulFitriDate.isNotBlank() && config.idulFitriDate == todayDateStr && config.idulFitriTime.isNotBlank()) {
+                        prayerCheckList.add(0, PrayerName.IDUL_FITRI to parseSeconds(config.idulFitriTime))
+                    }
+                    if (config.idulAdhaEnabled && config.idulAdhaDate.isNotBlank() && config.idulAdhaDate == todayDateStr && config.idulAdhaTime.isNotBlank()) {
+                        prayerCheckList.add(0, PrayerName.IDUL_ADHA to parseSeconds(config.idulAdhaTime))
+                    }
                     val isFriday = cal.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
 
                     for ((pName, pSec) in prayerCheckList) {
@@ -564,7 +592,9 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                     activeMuadzinName = officers.muadzin,
                     activeKhotibName = officers.khotib,
                     activeBilalName = officers.bilal,
-                    isFridayPrayer = officers.isFriday
+                    isFridayPrayer = officers.isFriday,
+                    isHariRaya = officers.isHariRaya,
+                    hariRayaEventTitle = officers.eventTitle
                 )
             }
 
@@ -602,18 +632,23 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                     activeMuadzinName = officers.muadzin,
                     activeKhotibName = officers.khotib,
                     activeBilalName = officers.bilal,
-                    isFridayPrayer = officers.isFriday
+                    isFridayPrayer = officers.isFriday,
+                    isHariRaya = officers.isHariRaya,
+                    hariRayaEventTitle = officers.eventTitle
                 )
             }
             delay(30_000) // 30 seconds adhan splash
 
             // 2. Iqomah Countdown
+            val isFriday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
             val iqomahMinutes = when (prayer) {
                 PrayerName.SUBUH -> config.iqomahSubuh
-                PrayerName.DZUHUR -> config.iqomahDzuhur
+                PrayerName.DZUHUR -> if (isFriday && config.showFridayOfficers) config.iqomahJumat else config.iqomahDzuhur
                 PrayerName.ASHAR -> config.iqomahAshar
                 PrayerName.MAGHRIB -> config.iqomahMaghrib
                 PrayerName.ISYA -> config.iqomahIsya
+                PrayerName.IDUL_FITRI -> config.idulFitriIqomahMinutes
+                PrayerName.IDUL_ADHA -> config.idulAdhaIqomahMinutes
                 else -> 10
             }
             var iqomahSeconds = iqomahMinutes * 60
@@ -626,7 +661,9 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                     activeMuadzinName = officers.muadzin,
                     activeKhotibName = officers.khotib,
                     activeBilalName = officers.bilal,
-                    isFridayPrayer = officers.isFriday
+                    isFridayPrayer = officers.isFriday,
+                    isHariRaya = officers.isHariRaya,
+                    hariRayaEventTitle = officers.eventTitle
                 )
             }
 
@@ -645,7 +682,12 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
             }
 
             // 3. Sholat Silent / Dimmed Mode
-            var sholatSeconds = (config.sholatDurationMinutes.coerceAtLeast(3)) * 60
+            val sholatMinutes = when (prayer) {
+                PrayerName.IDUL_FITRI -> config.idulFitriSholatMinutes
+                PrayerName.IDUL_ADHA -> config.idulAdhaSholatMinutes
+                else -> config.sholatDurationMinutes
+            }
+            var sholatSeconds = (sholatMinutes.coerceAtLeast(3)) * 60
             _uiState.update {
                 it.copy(
                     displayMode = TVDisplayMode.SHOLAT_SILENT,
@@ -655,7 +697,9 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                     activeMuadzinName = officers.muadzin,
                     activeKhotibName = officers.khotib,
                     activeBilalName = officers.bilal,
-                    isFridayPrayer = officers.isFriday
+                    isFridayPrayer = officers.isFriday,
+                    isHariRaya = officers.isHariRaya,
+                    hariRayaEventTitle = officers.eventTitle
                 )
             }
 
@@ -688,6 +732,54 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
             resetToNormalMode()
         }
     }
+
+    fun triggerIdulFitriManual() {
+        countdownModeJob?.cancel()
+        MurottalAudioPlayer.stop()
+        countdownModeJob = viewModelScope.launch {
+            val cal = _uiState.value.currentCalendar
+            val todayDateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(cal.time)
+            val config = _uiState.value.config
+            val officers = repository.getActivePrayerOfficers(todayDateStr, PrayerName.IDUL_FITRI, false, config, _uiState.value.fridaySchedule)
+            startPreAdhanCountdownFlow(PrayerName.IDUL_FITRI, 15, officers, config)
+        }
+    }
+
+    fun triggerIdulAdhaManual() {
+        countdownModeJob?.cancel()
+        MurottalAudioPlayer.stop()
+        countdownModeJob = viewModelScope.launch {
+            val cal = _uiState.value.currentCalendar
+            val todayDateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(cal.time)
+            val config = _uiState.value.config
+            val officers = repository.getActivePrayerOfficers(todayDateStr, PrayerName.IDUL_ADHA, false, config, _uiState.value.fridaySchedule)
+            startPreAdhanCountdownFlow(PrayerName.IDUL_ADHA, 15, officers, config)
+        }
+    }
+
+    fun triggerTarawihManual() {
+        countdownModeJob?.cancel()
+        MurottalAudioPlayer.stop()
+        countdownModeJob = viewModelScope.launch {
+            val night = _uiState.value.activeTarawihNight
+            val schedule = _uiState.value.activeTarawihSchedule 
+                ?: repository.getTarawihScheduleForNight(night)
+                ?: repository.getTarawihSchedules().firstOrNull()
+            val kultumTitle = if (schedule?.judulKultum?.isNotBlank() == true) " • ${schedule.judulKultum}" else ""
+            val officers = ActivePrayerOfficers(
+                imam = schedule?.imamTarawih?.takeIf { it.isNotBlank() } ?: "Ust. H. Ahmad Dahlan, Lc.",
+                muadzin = schedule?.bilalTarawih?.takeIf { it.isNotBlank() } ?: "Akhi Muhammad Syahril",
+                khotib = (schedule?.penceramah?.takeIf { it.isNotBlank() } ?: "Ust. Dr. H. Fathurrahman, M.Ag") + kultumTitle,
+                bilal = schedule?.imamWitir?.takeIf { it.isNotBlank() } ?: "Ust. Farhan Al-Hafizh",
+                isFriday = false,
+                isHariRaya = true,
+                eventTitle = "SHOLAT TARAWIH & KULTUM (MALAM KE-$night RAMADHAN)"
+            )
+            startPreAdhanCountdownFlow(PrayerName.ISYA, 15, officers, _uiState.value.config)
+        }
+    }
+
+
 
     fun triggerPreAdhanManual(prayer: PrayerName = PrayerName.DZUHUR, durationSeconds: Int = 30, forceFriday: Boolean = false) {
         countdownModeJob?.cancel()
@@ -794,6 +886,24 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
     fun deleteDailyImamSchedule(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.deleteDailyImamSchedule(id)
+        }
+    }
+
+    fun saveTarawihSchedule(schedule: TarawihSchedule) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.saveTarawihSchedule(schedule)
+        }
+    }
+
+    fun saveAllTarawihSchedules(schedules: List<TarawihSchedule>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.saveAllTarawihSchedules(schedules)
+        }
+    }
+
+    fun populateDefaultTarawihSchedules() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.populateDefaultTarawihSchedules()
         }
     }
 
@@ -998,6 +1108,20 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
     }
 
     companion object {
+        fun resolveActiveTarawihNight(config: MosqueConfig, hijriDateStr: String?): Int {
+            if (!config.tarawihAutoDetectNight) {
+                return config.tarawihManualNight.coerceIn(1, 30)
+            }
+            if (hijriDateStr != null && (hijriDateStr.contains("Ramadhan", ignoreCase = true) || hijriDateStr.contains("Ramadan", ignoreCase = true))) {
+                val parts = hijriDateStr.trim().split(Regex("\\s+"))
+                val dayNum = parts.firstOrNull()?.toIntOrNull()
+                if (dayNum != null) {
+                    return dayNum.coerceIn(1, 30)
+                }
+            }
+            return config.tarawihManualNight.coerceIn(1, 30)
+        }
+
         fun getUpcomingFridayWeekIndex(cal: Calendar): Int {
             val targetCal = cal.clone() as Calendar
             val currentDayOfWeek = targetCal.get(Calendar.DAY_OF_WEEK)

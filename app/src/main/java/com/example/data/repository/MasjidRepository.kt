@@ -36,9 +36,32 @@ class MasjidRepository(
                 offsetIsya = entity.offsetIsya,
                 iqomahSubuh = entity.iqomahSubuh,
                 iqomahDzuhur = entity.iqomahDzuhur,
+                iqomahJumat = entity.iqomahJumat,
                 iqomahAshar = entity.iqomahAshar,
                 iqomahMaghrib = entity.iqomahMaghrib,
                 iqomahIsya = entity.iqomahIsya,
+                idulFitriEnabled = entity.idulFitriEnabled,
+                idulFitriDate = entity.idulFitriDate,
+                idulFitriTime = entity.idulFitriTime,
+                idulFitriIqomahMinutes = entity.idulFitriIqomahMinutes,
+                idulFitriSholatMinutes = entity.idulFitriSholatMinutes,
+                idulAdhaEnabled = entity.idulAdhaEnabled,
+                idulAdhaDate = entity.idulAdhaDate,
+                idulAdhaTime = entity.idulAdhaTime,
+                idulAdhaIqomahMinutes = entity.idulAdhaIqomahMinutes,
+                idulAdhaSholatMinutes = entity.idulAdhaSholatMinutes,
+                tarawihEnabled = entity.tarawihEnabled,
+                tarawihAutoDetectNight = entity.tarawihAutoDetectNight,
+                tarawihManualNight = entity.tarawihManualNight,
+                tarawihShowSlide = entity.tarawihShowSlide,
+                tarawihKultumMinutes = entity.tarawihKultumMinutes,
+                tarawihSholatMinutes = entity.tarawihSholatMinutes,
+                tarawihTitleText = entity.tarawihTitleText,
+                tarawihTitleColor = entity.tarawihTitleColor,
+                tarawihOfficerNameColor = entity.tarawihOfficerNameColor,
+                tarawihOfficerLabelColor = entity.tarawihOfficerLabelColor,
+                tarawihBgPreset = entity.tarawihBgPreset,
+                customTarawihBgPath = entity.customTarawihBgPath,
                 sholatDurationMinutes = entity.sholatDurationMinutes,
                 hijriAdjustmentDays = entity.hijriAdjustmentDays,
                 activeTheme = entity.activeTheme,
@@ -367,6 +390,25 @@ class MasjidRepository(
         }
     }
 
+    val tarawihSchedulesFlow: Flow<List<TarawihSchedule>> = database.tarawihScheduleDao().getAllSchedulesFlow().map { list ->
+        list.map { entity ->
+            TarawihSchedule(
+                night = entity.night,
+                date = entity.date,
+                penceramah = entity.penceramah,
+                penceramahPhone = entity.penceramahPhone,
+                judulKultum = entity.judulKultum,
+                imamTarawih = entity.imamTarawih,
+                imamTarawihPhone = entity.imamTarawihPhone,
+                imamWitir = entity.imamWitir,
+                imamWitirPhone = entity.imamWitirPhone,
+                bilalTarawih = entity.bilalTarawih,
+                bilalTarawihPhone = entity.bilalTarawihPhone,
+                notes = entity.notes
+            )
+        }
+    }
+
 
     suspend fun saveConfig(config: MosqueConfig) {
         database.mosqueConfigDao().insertOrUpdate(
@@ -394,9 +436,32 @@ class MasjidRepository(
                 offsetIsya = config.offsetIsya,
                 iqomahSubuh = config.iqomahSubuh,
                 iqomahDzuhur = config.iqomahDzuhur,
+                iqomahJumat = config.iqomahJumat,
                 iqomahAshar = config.iqomahAshar,
                 iqomahMaghrib = config.iqomahMaghrib,
                 iqomahIsya = config.iqomahIsya,
+                idulFitriEnabled = config.idulFitriEnabled,
+                idulFitriDate = config.idulFitriDate,
+                idulFitriTime = config.idulFitriTime,
+                idulFitriIqomahMinutes = config.idulFitriIqomahMinutes,
+                idulFitriSholatMinutes = config.idulFitriSholatMinutes,
+                idulAdhaEnabled = config.idulAdhaEnabled,
+                idulAdhaDate = config.idulAdhaDate,
+                idulAdhaTime = config.idulAdhaTime,
+                idulAdhaIqomahMinutes = config.idulAdhaIqomahMinutes,
+                idulAdhaSholatMinutes = config.idulAdhaSholatMinutes,
+                tarawihEnabled = config.tarawihEnabled,
+                tarawihAutoDetectNight = config.tarawihAutoDetectNight,
+                tarawihManualNight = config.tarawihManualNight,
+                tarawihShowSlide = config.tarawihShowSlide,
+                tarawihKultumMinutes = config.tarawihKultumMinutes,
+                tarawihSholatMinutes = config.tarawihSholatMinutes,
+                tarawihTitleText = config.tarawihTitleText,
+                tarawihTitleColor = config.tarawihTitleColor,
+                tarawihOfficerNameColor = config.tarawihOfficerNameColor,
+                tarawihOfficerLabelColor = config.tarawihOfficerLabelColor,
+                tarawihBgPreset = config.tarawihBgPreset,
+                customTarawihBgPath = config.customTarawihBgPath,
                 sholatDurationMinutes = config.sholatDurationMinutes,
                 hijriAdjustmentDays = config.hijriAdjustmentDays,
                 activeTheme = config.activeTheme,
@@ -905,6 +970,107 @@ class MasjidRepository(
         }
     }
 
+    suspend fun getTarawihSchedules(): List<TarawihSchedule> {
+        val list = database.tarawihScheduleDao().getAllSchedules()
+        if (list.isEmpty()) {
+            val defaults = MasjidDatabase.generateDefaultTarawihSchedules()
+            database.tarawihScheduleDao().insertAll(defaults)
+            return defaults.map { entity ->
+                TarawihSchedule(
+                    night = entity.night,
+                    date = entity.date,
+                    penceramah = entity.penceramah,
+                    penceramahPhone = entity.penceramahPhone,
+                    judulKultum = entity.judulKultum,
+                    imamTarawih = entity.imamTarawih,
+                    imamTarawihPhone = entity.imamTarawihPhone,
+                    imamWitir = entity.imamWitir,
+                    imamWitirPhone = entity.imamWitirPhone,
+                    bilalTarawih = entity.bilalTarawih,
+                    bilalTarawihPhone = entity.bilalTarawihPhone,
+                    notes = entity.notes
+                )
+            }
+        }
+        return list.map { entity ->
+            TarawihSchedule(
+                night = entity.night,
+                date = entity.date,
+                penceramah = entity.penceramah,
+                penceramahPhone = entity.penceramahPhone,
+                judulKultum = entity.judulKultum,
+                imamTarawih = entity.imamTarawih,
+                imamTarawihPhone = entity.imamTarawihPhone,
+                imamWitir = entity.imamWitir,
+                imamWitirPhone = entity.imamWitirPhone,
+                bilalTarawih = entity.bilalTarawih,
+                bilalTarawihPhone = entity.bilalTarawihPhone,
+                notes = entity.notes
+            )
+        }
+    }
+
+    suspend fun getTarawihScheduleForNight(night: Int): TarawihSchedule? {
+        val entity = database.tarawihScheduleDao().getScheduleByNight(night) ?: return null
+        return TarawihSchedule(
+            night = entity.night,
+            date = entity.date,
+            penceramah = entity.penceramah,
+            penceramahPhone = entity.penceramahPhone,
+            judulKultum = entity.judulKultum,
+            imamTarawih = entity.imamTarawih,
+            imamTarawihPhone = entity.imamTarawihPhone,
+            imamWitir = entity.imamWitir,
+            imamWitirPhone = entity.imamWitirPhone,
+            bilalTarawih = entity.bilalTarawih,
+            bilalTarawihPhone = entity.bilalTarawihPhone,
+            notes = entity.notes
+        )
+    }
+
+    suspend fun saveTarawihSchedule(schedule: TarawihSchedule) {
+        val entity = TarawihScheduleEntity(
+            night = schedule.night,
+            date = schedule.date,
+            penceramah = schedule.penceramah,
+            penceramahPhone = schedule.penceramahPhone,
+            judulKultum = schedule.judulKultum,
+            imamTarawih = schedule.imamTarawih,
+            imamTarawihPhone = schedule.imamTarawihPhone,
+            imamWitir = schedule.imamWitir,
+            imamWitirPhone = schedule.imamWitirPhone,
+            bilalTarawih = schedule.bilalTarawih,
+            bilalTarawihPhone = schedule.bilalTarawihPhone,
+            notes = schedule.notes
+        )
+        database.tarawihScheduleDao().insertOrUpdate(entity)
+    }
+
+    suspend fun saveAllTarawihSchedules(schedules: List<TarawihSchedule>) {
+        val entities = schedules.map { schedule ->
+            TarawihScheduleEntity(
+                night = schedule.night,
+                date = schedule.date,
+                penceramah = schedule.penceramah,
+                penceramahPhone = schedule.penceramahPhone,
+                judulKultum = schedule.judulKultum,
+                imamTarawih = schedule.imamTarawih,
+                imamTarawihPhone = schedule.imamTarawihPhone,
+                imamWitir = schedule.imamWitir,
+                imamWitirPhone = schedule.imamWitirPhone,
+                bilalTarawih = schedule.bilalTarawih,
+                bilalTarawihPhone = schedule.bilalTarawihPhone,
+                notes = schedule.notes
+            )
+        }
+        database.tarawihScheduleDao().insertAll(entities)
+    }
+
+    suspend fun populateDefaultTarawihSchedules() {
+        val defaults = MasjidDatabase.generateDefaultTarawihSchedules()
+        database.tarawihScheduleDao().insertAll(defaults)
+    }
+
     suspend fun addDailyImamSchedule(date: String, prayerName: PrayerName, imamName: String, muadzinName: String = "", notes: String = ""): Long {
         return database.dailyImamScheduleDao().insert(
             DailyImamScheduleEntity(
@@ -942,7 +1108,43 @@ class MasjidRepository(
     ): ActivePrayerOfficers {
         val specific = database.dailyImamScheduleDao().getScheduleByDateAndPrayer(date, prayer.name)
 
-        if (isFriday && prayer == PrayerName.DZUHUR) {
+        if (prayer == PrayerName.IDUL_FITRI) {
+            val allFriday = database.fridayOfficerDao().getAllSchedules()
+            val fri = allFriday.find { it.id == 6L }
+            val imam = fri?.imam?.takeIf { it.isNotBlank() } ?: config.imamSubuh
+            val muadzin = fri?.muadzin?.takeIf { it.isNotBlank() } ?: config.muadzinSubuh
+            val khotib = fri?.khotib ?: ""
+            val bilal = fri?.bilal ?: ""
+            return ActivePrayerOfficers(
+                imam = imam,
+                muadzin = muadzin,
+                khotib = khotib,
+                bilal = bilal,
+                isFriday = false,
+                isHariRaya = true,
+                eventTitle = "SHOLAT IDUL FITRI"
+            )
+        }
+
+        if (prayer == PrayerName.IDUL_ADHA) {
+            val allFriday = database.fridayOfficerDao().getAllSchedules()
+            val fri = allFriday.find { it.id == 7L }
+            val imam = fri?.imam?.takeIf { it.isNotBlank() } ?: config.imamSubuh
+            val muadzin = fri?.muadzin?.takeIf { it.isNotBlank() } ?: config.muadzinSubuh
+            val khotib = fri?.khotib ?: ""
+            val bilal = fri?.bilal ?: ""
+            return ActivePrayerOfficers(
+                imam = imam,
+                muadzin = muadzin,
+                khotib = khotib,
+                bilal = bilal,
+                isFriday = false,
+                isHariRaya = true,
+                eventTitle = "SHOLAT IDUL ADHA"
+            )
+        }
+
+        if (isFriday && prayer == PrayerName.DZUHUR && config.showFridayOfficers) {
             val fri = fridaySchedule
             val imam = specific?.imamName?.takeIf { it.isNotBlank() }
                 ?: fri?.imam?.takeIf { it.isNotBlank() }

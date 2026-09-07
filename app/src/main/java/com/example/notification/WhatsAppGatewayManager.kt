@@ -78,6 +78,22 @@ Mohon konfirmasi kehadirannya. Jazakumullahu khairan katsiran.
 — *Takmir {nama_masjid}*
     """.trimIndent()
 
+    val DEFAULT_TEMPLATE_TARAWIH = """
+Assalamu'alaikum Warahmatullahi Wabarakatuh,
+
+Yth. *{nama_petugas}*,
+Mengingatkan jadwal antum pada Sholat Tarawih & Witir *Malam ke-{malam} Ramadhan* di *{nama_masjid}*:
+
+📋 *Tugas:* {peran}
+📅 *Tanggal:* {tanggal} ({malam_ramadhan})
+⏰ *Waktu:* Ba'da Sholat Isya' ({waktu_isya})
+📖 *Judul Kultum:* {judul_kultum}
+
+Mohon konfirmasi kehadirannya dan hadir sebelum Sholat Isya'. Jazakumullahu khairan katsiran.
+
+— *Panitia Ramadhan {nama_masjid}*
+    """.trimIndent()
+
     /**
      * Normalizes Indonesian phone numbers into standard international format without '+' (e.g. 628123456789)
      */
@@ -129,6 +145,30 @@ Mohon konfirmasi kehadirannya. Jazakumullahu khairan katsiran.
             .replace("{nama_kajian}", activity.title.ifBlank { "Kajian Masjid" })
             .replace("{waktu_kajian}", waktu)
             .replace("{tempat_kajian}", activity.location.ifBlank { "Ruang Utama Masjid" })
+    }
+
+    /**
+     * Renders a Tarawih Officer message template.
+     */
+    fun formatTarawihMessage(
+        template: String = DEFAULT_TEMPLATE_TARAWIH,
+        config: MosqueConfig,
+        schedule: com.example.data.model.TarawihSchedule,
+        officerName: String,
+        roleName: String,
+        isyaTimeStr: String = "19:15 WIB"
+    ): String {
+        val tpl = if (template.isNotBlank()) template else DEFAULT_TEMPLATE_TARAWIH
+        val judul = if (schedule.judulKultum.isNotBlank()) schedule.judulKultum else "-"
+        return tpl
+            .replace("{nama_masjid}", config.mosqueName.ifBlank { "Masjid" })
+            .replace("{nama_petugas}", officerName.ifBlank { "Petugas Sholat" })
+            .replace("{peran}", roleName)
+            .replace("{malam}", schedule.night.toString())
+            .replace("{malam_ramadhan}", "Malam ke-${schedule.night} Ramadhan")
+            .replace("{tanggal}", schedule.date.ifBlank { "Malam ke-${schedule.night}" })
+            .replace("{judul_kultum}", judul)
+            .replace("{waktu_isya}", isyaTimeStr)
     }
 
     /**

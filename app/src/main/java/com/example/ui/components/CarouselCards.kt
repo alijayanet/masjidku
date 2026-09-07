@@ -120,8 +120,7 @@ fun CarouselContainer(
     ) {
         buildList<CarouselSlideItem> {
             if (config.showFinancialReport) add(CarouselSlideItem.FinancialReport)
-            // Khusus Petugas Jum'at: Jika tidak dicentang, otomatis hanya aktif tampil pada hari Jum'at saja
-            if (config.showFridayOfficers || isFridayToday) {
+            if (config.showFridayOfficers) {
                 add(CarouselSlideItem.FridayOfficers)
             }
             if (config.showActivities) add(CarouselSlideItem.MosqueActivities)
@@ -1421,7 +1420,7 @@ fun SplitDashboardView(
     val bilalName = cleanOfficerName(fridaySchedule.bilal, "Akhi Muhammad Syahril")
     
     val isFriday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
-    val showFriday = config.showFridayOfficers || isFriday
+    val showFriday = config.showFridayOfficers
     val showFinance = config.showFinancialReport
 
     if (!showFinance && !showFriday) {

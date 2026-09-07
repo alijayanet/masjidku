@@ -105,7 +105,7 @@ Mohon konfirmasi kehadirannya. Jazakumullahu khairan katsiran.
         val tpl = if (template.isNotBlank()) template else DEFAULT_TEMPLATE_THURSDAY
         return tpl
             .replace("{nama_masjid}", config.mosqueName.ifBlank { "Masjid" })
-            .replace("{nama_petugas}", officerName.ifBlank { "Petugas Sholat Jum'at" })
+            .replace("{nama_petugas}", officerName.ifBlank { "Petugas Sholat" })
             .replace("{peran}", roleName)
             .replace("{tanggal}", schedule.date.ifBlank { "Jum'at" })
             .replace("{hijriah}", schedule.hijriDate.ifBlank { "Jum'at Barakah" })

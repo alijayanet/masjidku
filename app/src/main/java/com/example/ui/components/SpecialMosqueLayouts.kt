@@ -505,7 +505,7 @@ fun LayoutWaktihaClassic(
 
                 // 2. Petugas Sholat Jum'at / Maklumat Card
                 val isFriday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
-                val showFriday = config.showFridayOfficers || isFriday
+                val showFriday = config.showFridayOfficers
                 val showMaklumat = config.showDailyMaklumat
 
                 if (showFriday || showMaklumat) {
@@ -1535,7 +1535,7 @@ fun LayoutMihrabGrandRoyal(
     modifier: Modifier = Modifier
 ) {
     val isFriday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
-    val showFriday = config.showFridayOfficers || isFriday
+    val showFriday = config.showFridayOfficers
     val showFinance = config.showFinancialReport
     val showQris = config.showQrisCard
     val showHadith = config.showDailyHadith
@@ -2607,7 +2607,7 @@ fun LayoutCordobaAndalusia(
 
         // 2. MIDDLE SECTION: Panel Informasi Dinamis (Petugas Jum'at / Kas & QRIS / Hadits / Maklumat)
         val isFriday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
-        val showFriday = config.showFridayOfficers || isFriday
+        val showFriday = config.showFridayOfficers
         val showFinance = config.showFinancialReport
         val showQris = config.showQrisCard
         val showHadith = config.showDailyHadith

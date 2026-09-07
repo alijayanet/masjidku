@@ -1054,16 +1054,27 @@ private fun TabMultiFridaySettings(
     upcomingIndex: Int,
     onSaveFriday: (FridaySchedule) -> Unit
 ) {
-    var selectedWeek by remember { mutableStateOf(upcomingIndex.coerceIn(1, 5)) }
+    var selectedWeek by remember { mutableStateOf(upcomingIndex.coerceIn(1, 7)) }
     var savedToast by remember { mutableStateOf(false) }
+
+    val defaultDate = when (selectedWeek) {
+        6 -> "1 Syawal (Idul Fitri)"
+        7 -> "10 Dzulhijjah (Idul Adha)"
+        else -> "Jum'at Ke-$selectedWeek"
+    }
+    val defaultHijri = when (selectedWeek) {
+        6 -> "1 Syawal"
+        7 -> "10 Dzulhijjah"
+        else -> "Jum'at Barakah"
+    }
 
     // Find current schedule for selected week or fallback
     val currentSchedule = remember(allSchedules, selectedWeek) {
         allSchedules.find { it.id == selectedWeek.toLong() }
             ?: FridaySchedule(
                 id = selectedWeek.toLong(),
-                date = "Jum'at Ke-$selectedWeek",
-                hijriDate = "Jum'at Barakah",
+                date = defaultDate,
+                hijriDate = defaultHijri,
                 khotib = "",
                 imam = "",
                 muadzin = "",
@@ -1078,6 +1089,16 @@ private fun TabMultiFridaySettings(
     var bilal by remember(currentSchedule) { mutableStateOf(currentSchedule.bilal) }
     var khutbahTopic by remember(currentSchedule) { mutableStateOf(currentSchedule.khutbahTopic) }
 
+    val isIdulFitri = selectedWeek == 6
+    val isIdulAdha = selectedWeek == 7
+    val isHariRaya = isIdulFitri || isIdulAdha
+
+    val eventName = when (selectedWeek) {
+        6 -> "Sholat Idul Fitri"
+        7 -> "Sholat Idul Adha"
+        else -> "Sholat Jum'at Ke-$selectedWeek"
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1089,7 +1110,7 @@ private fun TabMultiFridaySettings(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Jadwal Petugas Sholat Jum'at (Pekan 1 s/d 5)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = IslamicGoldBright)
+            Text("Jadwal Petugas Sholat Jum'at & Hari Raya", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = IslamicGoldBright)
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
@@ -1097,32 +1118,37 @@ private fun TabMultiFridaySettings(
                     .border(1.dp, Color(0xFF10B981), RoundedCornerShape(6.dp))
                     .padding(horizontal = 8.dp, vertical = 2.dp)
             ) {
-                Text("🌟 Pekan Aktif: Jum'at Ke-$upcomingIndex", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA7F3D0))
+                Text("🌟 Jum'at Aktif: Pekan $upcomingIndex", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA7F3D0))
             }
         }
 
         Text(
-            text = "💡 Sistem TV otomatis memilih & menampilkan petugas sesuai pekan Jum'at yang akan datang. Admin cukup mengisi jadwal pekan 1 s.d. 5 sekali saja tanpa perlu mengubah setiap minggu!",
+            text = "💡 Sistem TV otomatis memilih & menampilkan petugas sesuai pekan Jum'at yang akan datang, serta menyediakan jadwal khusus untuk Sholat Idul Fitri dan Idul Adha.",
             fontSize = 10.sp,
             color = SleekEmerald300,
             lineHeight = 14.sp
         )
 
-        // 5 Friday Week Switcher Tabs
+        // Switcher Tabs (Jum'at 1..5, Idul Fitri, Idul Adha)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            (1..5).forEach { weekNum ->
+            (1..7).forEach { weekNum ->
                 val isSelected = selectedWeek == weekNum
-                val isUpcoming = upcomingIndex == weekNum
+                val isUpcoming = upcomingIndex == weekNum && weekNum <= 5
+                val btnLabel = when (weekNum) {
+                    6 -> "🎉 Idul Fitri"
+                    7 -> "🐑 Idul Adha"
+                    else -> "Jum'at $weekNum"
+                }
 
                 Button(
                     onClick = {
                         selectedWeek = weekNum
                         savedToast = false
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(if (weekNum >= 6) 1.25f else 1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isSelected) IslamicGoldPrimary else if (isUpcoming) Color(0x4010B981) else Color(0x26FFFFFF)
                     ),
@@ -1131,13 +1157,14 @@ private fun TabMultiFridaySettings(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "Jum'at $weekNum",
-                            fontSize = 11.sp,
+                            text = btnLabel,
+                            fontSize = if (weekNum >= 6) 9.5.sp else 10.5.sp,
                             fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold,
-                            color = if (isSelected) IslamicEmeraldDark else Color.White
+                            color = if (isSelected) IslamicEmeraldDark else Color.White,
+                            maxLines = 1
                         )
                         if (isUpcoming) {
-                            Text("Akan Datang", fontSize = 8.sp, color = if (isSelected) IslamicEmeraldDark else SleekAmber400, fontWeight = FontWeight.Bold)
+                            Text("Akan Datang", fontSize = 7.5.sp, color = if (isSelected) IslamicEmeraldDark else SleekAmber400, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -1150,12 +1177,21 @@ private fun TabMultiFridaySettings(
             shape = RoundedCornerShape(8.dp)
         ) {
             Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Form Petugas Jum'at Ke-$selectedWeek", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = IslamicGoldLight)
+                Text(
+                    text = when (selectedWeek) {
+                        6 -> "Form Petugas Sholat Idul Fitri (1 Syawal)"
+                        7 -> "Form Petugas Sholat Idul Adha (10 Dzulhijjah)"
+                        else -> "Form Petugas Sholat Jum'at Ke-$selectedWeek"
+                    },
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = IslamicGoldLight
+                )
 
                 OutlinedTextField(
                     value = khotib,
                     onValueChange = { khotib = it },
-                    label = { Text("Khotib Jum'at Ke-$selectedWeek", fontSize = 11.sp) },
+                    label = { Text(if (isHariRaya) "Khotib $eventName" else "Khotib Jum'at Ke-$selectedWeek", fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -1163,7 +1199,7 @@ private fun TabMultiFridaySettings(
                 OutlinedTextField(
                     value = imam,
                     onValueChange = { imam = it },
-                    label = { Text("Imam Sholat Jum'at", fontSize = 11.sp) },
+                    label = { Text(if (isHariRaya) "Imam $eventName" else "Imam Sholat Jum'at", fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -1172,14 +1208,14 @@ private fun TabMultiFridaySettings(
                     OutlinedTextField(
                         value = muadzin,
                         onValueChange = { muadzin = it },
-                        label = { Text("Muadzin", fontSize = 11.sp) },
+                        label = { Text(if (isHariRaya) "Muadzin / Pemandu Takbir" else "Muadzin", fontSize = 11.sp) },
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = bilal,
                         onValueChange = { bilal = it },
-                        label = { Text("Bilal", fontSize = 11.sp) },
+                        label = { Text(if (isHariRaya) "Bilal / Protokol" else "Bilal", fontSize = 11.sp) },
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
@@ -1187,15 +1223,21 @@ private fun TabMultiFridaySettings(
 
                 Button(
                     onClick = {
+                        val defaultNotes = when (selectedWeek) {
+                            6 -> "Jadwal Petugas Sholat Idul Fitri"
+                            7 -> "Jadwal Petugas Sholat Idul Adha"
+                            else -> "Jadwal Petugas Sholat Jum'at Pekan Ke-$selectedWeek"
+                        }
                         val updated = currentSchedule.copy(
                             id = selectedWeek.toLong(),
-                            date = "Jum'at Ke-$selectedWeek",
-                            hijriDate = "Jum'at Barakah",
+                            date = if (currentSchedule.date.isNotBlank() && !currentSchedule.date.startsWith("Jum'at Ke-")) currentSchedule.date else defaultDate,
+                            hijriDate = if (currentSchedule.hijriDate.isNotBlank() && !currentSchedule.hijriDate.startsWith("Jum'at Ke-")) currentSchedule.hijriDate else defaultHijri,
                             khotib = khotib,
                             imam = imam,
                             muadzin = muadzin,
                             bilal = bilal,
-                            khutbahTopic = khutbahTopic
+                            khutbahTopic = khutbahTopic,
+                            notes = if (currentSchedule.notes.isNotBlank()) currentSchedule.notes else defaultNotes
                         )
                         onSaveFriday(updated)
                         savedToast = true
@@ -1204,11 +1246,16 @@ private fun TabMultiFridaySettings(
                     colors = ButtonDefaults.buttonColors(containerColor = IslamicGoldPrimary),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    Text("💾 Simpan Jadwal Petugas Jum'at Ke-$selectedWeek", color = IslamicEmeraldDark, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(
+                        text = "💾 Simpan Jadwal Petugas $eventName",
+                        color = IslamicEmeraldDark,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
                 }
 
                 if (savedToast) {
-                    Text("✅ Jadwal Petugas Jum'at Ke-$selectedWeek Tersimpan!", color = Color(0xFF81C784), fontSize = 11.sp)
+                    Text("✅ Jadwal Petugas $eventName Tersimpan!", color = Color(0xFF81C784), fontSize = 11.sp)
                 }
             }
         }

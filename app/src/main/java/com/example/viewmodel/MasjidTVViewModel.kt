@@ -511,8 +511,7 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
 
         var count = 0
         if (config.showFinancialReport) count++
-        val isFriday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
-        if (config.showFridayOfficers || isFriday) count++
+        if (config.showFridayOfficers) count++
         if (config.showActivities) count++
         if (config.showDailyMaklumat) count++
         if (config.showQrisCard) count++

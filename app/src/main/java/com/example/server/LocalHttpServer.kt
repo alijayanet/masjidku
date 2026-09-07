@@ -2859,7 +2859,7 @@ class LocalHttpServer(
         <button class="tab-btn" onclick="switchTab('tab-murottal')">🎧 Murottal & Qari</button>
         <button class="tab-btn" onclick="switchTab('tab-youtube')">🔴 Siaran Live & CCTV</button>
         <button class="tab-btn" onclick="switchTab('tab-keuangan')">💰 Keuangan</button>
-        <button class="tab-btn" onclick="switchTab('tab-jumat')">📋 Petugas Jum'at</button>
+        <button class="tab-btn" onclick="switchTab('tab-jumat')">📋 Petugas Sholat</button>
         <button class="tab-btn" onclick="switchTab('tab-whatsapp')">💬 WhatsApp Gateway</button>
         <button class="tab-btn" onclick="switchTab('tab-kegiatan')">📅 Kegiatan</button>
         <button class="tab-btn" onclick="switchTab('tab-running')">📜 Running Text</button>
@@ -3262,56 +3262,58 @@ class LocalHttpServer(
             </div>
         </div>
 
-        <!-- 4. TAB PETUGAS JUMAT -->
+        <!-- 4. TAB PETUGAS JUMAT & HARI RAYA -->
         <div id="tab-jumat" class="section-tab">
-            <!-- CARD KUSTOMISASI TEKS & WARNA PETUGAS JUMAT -->
+            <!-- CARD KUSTOMISASI TEKS & WARNA PETUGAS -->
             <div class="card" style="border: 2px solid #D4AF37; background: #FFFCF2;">
                 <div class="card-header" style="border-bottom: 1px solid #F3E5AB;">
-                    <h2 style="color: #92400E; display:flex; align-items:center; gap:8px;">🎨 Desain Font & Warna Petugas Jum'at</h2>
+                    <h2 style="color: #92400E; display:flex; align-items:center; gap:8px;">🎨 Desain Font & Warna Petugas Sholat</h2>
                 </div>
                 <p style="font-size:13px; color:#78350F; margin-bottom:12px;">
                     Atur teks judul plakat dan warna font nama petugas (Khatib, Imam, Muadzin, Bilal) serta label jabatannya.
                 </p>
                 <button type="button" class="btn-gold" onclick="openFridayCustomizationModal()">
-                    ✏️ Edit Teks & Warna Petugas Jum'at
+                    ✏️ Edit Teks & Warna Petugas Sholat
                 </button>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h2>Jadwal Petugas Sholat Jum'at</h2>
+                    <h2 id="friCardTitle">Jadwal Petugas Sholat Jum'at & Hari Raya</h2>
                 </div>
                 <div id="friLiveAlert" style="margin-bottom:12px; padding:10px 14px; background:rgba(16, 185, 129, 0.15); border:1px solid #10B981; border-radius:10px; font-size:13px; color:#A7F3D0;"></div>
-                <div class="pill-switch" style="margin-bottom:14px;">
+                <div class="pill-switch" style="margin-bottom:14px; flex-wrap:wrap; gap:6px;">
                     <button type="button" class="pill-btn active" id="btnFri1" onclick="switchFridayWeek(1)">Jum'at 1</button>
                     <button type="button" class="pill-btn" id="btnFri2" onclick="switchFridayWeek(2)">Jum'at 2</button>
                     <button type="button" class="pill-btn" id="btnFri3" onclick="switchFridayWeek(3)">Jum'at 3</button>
                     <button type="button" class="pill-btn" id="btnFri4" onclick="switchFridayWeek(4)">Jum'at 4</button>
                     <button type="button" class="pill-btn" id="btnFri5" onclick="switchFridayWeek(5)">Jum'at 5</button>
+                    <button type="button" class="pill-btn" id="btnFri6" onclick="switchFridayWeek(6)" style="border-color:#10B981;">🎉 Idul Fitri</button>
+                    <button type="button" class="pill-btn" id="btnFri7" onclick="switchFridayWeek(7)" style="border-color:#F59E0B;">🐑 Idul Adha</button>
                 </div>
                 <form id="formFriday" onsubmit="saveFriday(event)">
                     <div class="grid-2">
-                        <div class="form-group"><label>Keterangan Tanggal Masehi</label><input type="text" id="friDate" class="form-control" placeholder="Contoh: 28 Agustus 2026"></div>
-                        <div class="form-group"><label>Tanggal Hijriyah / Label</label><input type="text" id="friHijriDate" class="form-control" placeholder="Contoh: Jum'at Barakah"></div>
+                        <div class="form-group"><label id="lblFriDate">Keterangan Tanggal Masehi</label><input type="text" id="friDate" class="form-control" placeholder="Contoh: 28 Agustus 2026"></div>
+                        <div class="form-group"><label id="lblFriHijriDate">Tanggal Hijriyah / Label</label><input type="text" id="friHijriDate" class="form-control" placeholder="Contoh: Jum'at Barakah"></div>
                     </div>
                     <div class="grid-2">
-                        <div class="form-group"><label>🎙️ Nama Khotib Jum'at</label><input type="text" id="friKhotib" class="form-control" placeholder="Nama Khotib"></div>
+                        <div class="form-group"><label id="lblFriKhotib">🎙️ Nama Khotib</label><input type="text" id="friKhotib" class="form-control" placeholder="Nama Khotib"></div>
                         <div class="form-group"><label>📱 No. WhatsApp Khotib</label><input type="text" id="friKhotibPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
                     </div>
                     <div class="grid-2">
-                        <div class="form-group"><label>🕌 Nama Imam Sholat</label><input type="text" id="friImam" class="form-control" placeholder="Nama Imam"></div>
+                        <div class="form-group"><label id="lblFriImam">🕌 Nama Imam Sholat</label><input type="text" id="friImam" class="form-control" placeholder="Nama Imam"></div>
                         <div class="form-group"><label>📱 No. WhatsApp Imam</label><input type="text" id="friImamPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
                     </div>
                     <div class="grid-2">
-                        <div class="form-group"><label>📢 Nama Muadzin</label><input type="text" id="friMuadzin" class="form-control" placeholder="Nama Muadzin"></div>
+                        <div class="form-group"><label id="lblFriMuadzin">📢 Nama Muadzin</label><input type="text" id="friMuadzin" class="form-control" placeholder="Nama Muadzin"></div>
                         <div class="form-group"><label>📱 No. WhatsApp Muadzin</label><input type="text" id="friMuadzinPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
                     </div>
                     <div class="grid-2">
-                        <div class="form-group"><label>📜 Nama Bilal / Muraqqi</label><input type="text" id="friBilal" class="form-control" placeholder="Nama Bilal"></div>
+                        <div class="form-group"><label id="lblFriBilal">📜 Nama Bilal / Muraqqi</label><input type="text" id="friBilal" class="form-control" placeholder="Nama Bilal"></div>
                         <div class="form-group"><label>📱 No. WhatsApp Bilal</label><input type="text" id="friBilalPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
                     </div>
                     <div class="form-group"><label>📖 Catatan Khutbah / Jadwal</label><input type="text" id="friNotes" class="form-control" placeholder="Catatan tambahan (opsional)"></div>
-                    <div class="form-group" style="margin:12px 0 16px 0; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px dashed rgba(255,255,255,0.2);">
+                    <div class="form-group" id="friApplyAllContainer" style="margin:12px 0 16px 0; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px dashed rgba(255,255,255,0.2);">
                         <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#FDE68A;">
                             <input type="checkbox" id="friApplyAll" style="width:20px; height:20px; accent-color:#10B981;">
                             <span>Salin & Terapkan nama & no. WA petugas ini ke <strong>Semua Minggu Jum'at (Jum'at 1 s/d 5)</strong></span>
@@ -3435,14 +3437,22 @@ class LocalHttpServer(
                     <h2>🚀 Kirim Pengingat Manual Sekarang (Broadcast 1-Klik)</h2>
                 </div>
                 <p style="font-size:13px; color:#475569; margin-bottom:14px;">
-                    Kirim pengingat WhatsApp secara langsung kepada seluruh petugas Sholat Jum'at pekan ini tanpa menunggu jam otomatis.
+                    Kirim pengingat WhatsApp secara langsung kepada seluruh petugas Sholat Jum'at / Hari Raya tanpa menunggu jam otomatis.
                 </p>
-                <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
                     <button type="button" class="btn-primary" style="background:#0284C7; border-color:#0369A1;" onclick="sendManualFridayBroadcast('THURSDAY')">
-                        📨 Kirim Format Pengingat H-1 (Kamis) ke Petugas Jum'at Sekarang
+                        📨 Kirim Format H-1 (Kamis) ke Petugas Jum'at
                     </button>
                     <button type="button" class="btn-primary" style="background:#16A34A; border-color:#15803D;" onclick="sendManualFridayBroadcast('FRIDAY')">
-                        📢 Kirim Format Pengingat Hari H (Jum'at) ke Petugas Jum'at Sekarang
+                        📢 Kirim Format Hari H (Jum'at) ke Petugas Jum'at
+                    </button>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button type="button" class="btn-primary" style="background:#059669; border-color:#047857;" onclick="sendManualFridayBroadcast('FRIDAY', 6)">
+                        🎉 Kirim Pengingat Petugas Idul Fitri (1 Syawal)
+                    </button>
+                    <button type="button" class="btn-primary" style="background:#D97706; border-color:#B45309;" onclick="sendManualFridayBroadcast('FRIDAY', 7)">
+                        🐑 Kirim Pengingat Petugas Idul Adha (10 Dzulhijjah)
                     </button>
                 </div>
 
@@ -7517,25 +7527,40 @@ class LocalHttpServer(
             }
         }
 
-        // --- PETUGAS JUMAT ---
+        // --- PETUGAS JUMAT & HARI RAYA ---
         function renderFridayWeek(weekNum) {
             window.currentFriWeek = weekNum;
             const upcoming = window.upcomingFridayWeek || 1;
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 7; i++) {
                 const btn = document.getElementById('btnFri' + i);
                 if (btn) {
-                    const isLive = (i === upcoming);
-                    btn.innerHTML = 'Jum\'at ' + i + (isLive ? ' <span style="background:#10B981; color:#022C22; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold; margin-left:3px;">LIVE TV</span>' : '');
+                    const isLive = (i === upcoming && i <= 5);
+                    const label = (i <= 5) ? ('Jum\'at ' + i) : (i === 6 ? '🎉 Idul Fitri' : '🐑 Idul Adha');
+                    btn.innerHTML = label + (isLive ? ' <span style="background:#10B981; color:#022C22; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:bold; margin-left:3px;">LIVE TV</span>' : '');
                     if (i === weekNum) btn.classList.add('active');
                     else btn.classList.remove('active');
                 }
             }
             const btnSave = document.getElementById('btnSaveFri');
-            if (btnSave) btnSave.innerText = '💾 Simpan Petugas Jum\'at Ke-' + weekNum + ' & Perbarui TV';
+            if (btnSave) {
+                if (weekNum === 6) btnSave.innerText = '💾 Simpan Petugas Sholat Idul Fitri & Perbarui TV';
+                else if (weekNum === 7) btnSave.innerText = '💾 Simpan Petugas Sholat Idul Adha & Perbarui TV';
+                else btnSave.innerText = '💾 Simpan Petugas Jum\'at Ke-' + weekNum + ' & Perbarui TV';
+            }
 
             const alertDiv = document.getElementById('friLiveAlert');
             if (alertDiv) {
-                if (weekNum === upcoming) {
+                if (weekNum === 6) {
+                    alertDiv.innerHTML = '🎉 <strong>Petugas Sholat Hari Raya Idul Fitri (1 Syawal)</strong>. Atur nama dan nomor WhatsApp Khotib, Imam, Muadzin/Pemandu Takbir, dan Bilal Hari Raya.';
+                    alertDiv.style.borderColor = '#10B981';
+                    alertDiv.style.background = 'rgba(16, 185, 129, 0.15)';
+                    alertDiv.style.color = '#A7F3D0';
+                } else if (weekNum === 7) {
+                    alertDiv.innerHTML = '🐑 <strong>Petugas Sholat Hari Raya Idul Adha (10 Dzulhijjah)</strong>. Atur nama dan nomor WhatsApp Khotib, Imam, Muadzin/Pemandu Takbir, dan Bilal Hari Raya.';
+                    alertDiv.style.borderColor = '#F59E0B';
+                    alertDiv.style.background = 'rgba(245, 158, 11, 0.15)';
+                    alertDiv.style.color = '#FDE68A';
+                } else if (weekNum === upcoming) {
                     alertDiv.innerHTML = '🟢 <strong>Jadwal Minggu ' + weekNum + '</strong> adalah jadwal yang <strong>SEDANG TAYANG DI TV</strong> saat ini. Perubahan yang Anda simpan akan langsung terlihat di layar TV!';
                     alertDiv.style.borderColor = '#10B981';
                     alertDiv.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -7548,16 +7573,32 @@ class LocalHttpServer(
                 }
             }
 
+            const applyAllContainer = document.getElementById('friApplyAllContainer');
+            if (applyAllContainer) {
+                applyAllContainer.style.display = (weekNum >= 6) ? 'none' : 'block';
+            }
+
+            const lblKhotib = document.getElementById('lblFriKhotib');
+            if (lblKhotib) lblKhotib.innerText = (weekNum === 6) ? '🎙️ Khotib Sholat Idul Fitri' : (weekNum === 7 ? '🎙️ Khotib Sholat Idul Adha' : '🎙️ Nama Khotib Jum\'at');
+            const lblImam = document.getElementById('lblFriImam');
+            if (lblImam) lblImam.innerText = (weekNum === 6) ? '🕌 Imam Sholat Idul Fitri' : (weekNum === 7 ? '🕌 Imam Sholat Idul Adha' : '🕌 Nama Imam Sholat');
+            const lblMuadzin = document.getElementById('lblFriMuadzin');
+            if (lblMuadzin) lblMuadzin.innerText = (weekNum >= 6) ? '📢 Muadzin / Pemandu Takbir' : '📢 Nama Muadzin';
+            const lblBilal = document.getElementById('lblFriBilal');
+            if (lblBilal) lblBilal.innerText = (weekNum >= 6) ? '📜 Bilal / Protokol Acara' : '📜 Nama Bilal / Muraqqi';
+
             const list = window.allFridayList || [];
+            const defaultDate = (weekNum === 6) ? '1 Syawal (Idul Fitri)' : ((weekNum === 7) ? '10 Dzulhijjah (Idul Adha)' : '');
+            const defaultHijri = (weekNum === 6) ? '1 Syawal' : ((weekNum === 7) ? '10 Dzulhijjah' : '');
             const fri = list.find(f => f.id === weekNum) || {
                 id: weekNum,
-                date: '',
-                hijriDate: '',
+                date: defaultDate,
+                hijriDate: defaultHijri,
                 khotib: '', imam: '', muadzin: '', bilal: '', khutbahTopic: '', notes: ''
             };
 
-            document.getElementById('friDate').value = (fri.date && !fri.date.startsWith("Jum'at Ke-")) ? fri.date : '';
-            document.getElementById('friHijriDate').value = (fri.hijriDate && !fri.hijriDate.startsWith("Jum'at Ke-")) ? fri.hijriDate : '';
+            document.getElementById('friDate').value = (fri.date && !fri.date.startsWith("Jum'at Ke-")) ? fri.date : defaultDate;
+            document.getElementById('friHijriDate').value = (fri.hijriDate && !fri.hijriDate.startsWith("Jum'at Ke-")) ? fri.hijriDate : defaultHijri;
             document.getElementById('friKhotib').value = fri.khotib || '';
             if (document.getElementById('friKhotibPhone')) document.getElementById('friKhotibPhone').value = fri.khotibPhone || '';
             document.getElementById('friImam').value = fri.imam || '';
@@ -7577,7 +7618,7 @@ class LocalHttpServer(
         async function saveFriday(e) {
             e.preventDefault();
             const weekNum = window.currentFriWeek || 1;
-            const applyAll = document.getElementById('friApplyAll')?.checked || false;
+            const applyAll = (weekNum <= 5) ? (document.getElementById('friApplyAll')?.checked || false) : false;
             const payload = {
                 id: weekNum,
                 applyAll: applyAll,
@@ -7594,7 +7635,8 @@ class LocalHttpServer(
                 notes: document.getElementById('friNotes').value
             };
             await fetch('/api/save-friday', { method: 'POST', body: JSON.stringify(payload) });
-            showToast('Petugas Jum\'at Berhasil Disimpan & Diperbarui di TV!');
+            const toastMsg = (weekNum === 6) ? 'Petugas Sholat Idul Fitri Berhasil Disimpan!' : ((weekNum === 7) ? 'Petugas Sholat Idul Adha Berhasil Disimpan!' : 'Petugas Jum\'at Berhasil Disimpan & Diperbarui di TV!');
+            showToast(toastMsg);
             loadStatus();
         }
 
@@ -7843,21 +7885,26 @@ class LocalHttpServer(
             }
         }
 
-        async function sendManualFridayBroadcast(type) {
-            const typeLabel = (type === 'THURSDAY') ? 'H-1 (Hari Kamis)' : 'Hari H (Hari Jum\'at)';
-            if (!confirm('Kirim pesan pengingat Sholat Jum\'at format ' + typeLabel + ' ke seluruh petugas sekarang?')) {
+        async function sendManualFridayBroadcast(type, targetWeekId) {
+            const weekId = targetWeekId || window.currentFriWeek || 1;
+            let targetLabel = 'Jum\'at Pekan ' + weekId;
+            if (weekId === 6) targetLabel = 'Sholat Idul Fitri (1 Syawal)';
+            else if (weekId === 7) targetLabel = 'Sholat Idul Adha (10 Dzulhijjah)';
+
+            const typeLabel = (type === 'THURSDAY') ? 'H-1 (Hari Kamis)' : 'Hari H';
+            if (!confirm('Kirim pesan pengingat untuk ' + targetLabel + ' (Format ' + typeLabel + ') ke seluruh petugas sekarang?')) {
                 return;
             }
             const logBox = document.getElementById('waBroadcastLogBox');
             if (logBox) {
                 logBox.style.display = 'block';
-                logBox.innerHTML = '⏳ Sedang memproses dan mengirimkan pesan WhatsApp ke petugas Jum\'at...';
+                logBox.innerHTML = '⏳ Sedang memproses dan mengirimkan pesan WhatsApp ke petugas ' + targetLabel + '...';
             }
             try {
                 const res = await fetch('/api/wa-gateway/send-friday-reminder', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: type, weekId: window.currentFriWeek || 1 })
+                    body: JSON.stringify({ type: type, weekId: weekId })
                 });
                 const data = await res.json();
                 if (logBox) {

@@ -869,6 +869,39 @@ class MasjidRepository(
                     )
                 }
             }
+
+            // Ensure Idul Fitri (id=6) and Idul Adha (id=7) exist
+            val existingIds = fridaySchedules.map { it.id }.toSet()
+            if (!existingIds.contains(6L)) {
+                database.fridayOfficerDao().insertOrUpdate(
+                    FridayOfficerEntity(
+                        id = 6L,
+                        date = "1 Syawal (Idul Fitri)",
+                        hijriDate = "1 Syawal",
+                        khotib = "KH. Ahmad Dahlan, M.A.",
+                        imam = "Ustadz H. M. Firdaus Al-Hafidz",
+                        muadzin = "Ustadz Bilal Ramadhan",
+                        bilal = "Akhi Muhammad Syahril",
+                        khutbahTopic = "Meraih Kemenangan Hakiki & Mempererat Ukhuwah Islamiyah",
+                        notes = "Jadwal Petugas Sholat Idul Fitri"
+                    )
+                )
+            }
+            if (!existingIds.contains(7L)) {
+                database.fridayOfficerDao().insertOrUpdate(
+                    FridayOfficerEntity(
+                        id = 7L,
+                        date = "10 Dzulhijjah (Idul Adha)",
+                        hijriDate = "10 Dzulhijjah",
+                        khotib = "Dr. H. Muchlis Muhammad, Lc., M.A.",
+                        imam = "Ustadz Hasan Basri Al-Hafidz",
+                        muadzin = "Ustadz Salman Al-Farisi",
+                        bilal = "Akhi Rizky Ramadhan",
+                        khutbahTopic = "Meneladani Keikhlasan dan Semangat Berqurban Nabi Ibrahim AS",
+                        notes = "Jadwal Petugas Sholat Idul Adha"
+                    )
+                )
+            }
         }
     }
 

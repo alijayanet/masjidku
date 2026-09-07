@@ -1419,7 +1419,6 @@ fun SplitDashboardView(
     val imamName = cleanOfficerName(fridaySchedule.imam, "Ustadz H. M. Firdaus Al-Hafidz")
     val muadzinName = cleanOfficerName(fridaySchedule.muadzin, "Ustadz Bilal Ramadhan")
     val bilalName = cleanOfficerName(fridaySchedule.bilal, "Akhi Muhammad Syahril")
-    val topic = if (fridaySchedule.khutbahTopic.isNotBlank() && fridaySchedule.khutbahTopic != "-" && fridaySchedule.khutbahTopic != "Taqwa Kepada Allah SWT") fridaySchedule.khutbahTopic else "Menjaga Keistiqomahan Ibadah & Keikhlasan Hati"
     
     val isFriday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
     val showFriday = config.showFridayOfficers || isFriday

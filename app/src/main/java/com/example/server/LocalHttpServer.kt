@@ -3404,7 +3404,7 @@ class LocalHttpServer(
                             📝 Template Pesan WhatsApp (Dapat Dikustomisasi)
                         </h3>
                         <p style="font-size:12px; color:#64748B; margin-bottom:12px;">
-                            Gunakan variabel: <code>{nama_masjid}</code>, <code>{nama_petugas}</code>, <code>{peran}</code>, <code>{tanggal}</code>, <code>{hijriah}</code>, <code>{judul_khutbah}</code>, <code>{waktu_sholat}</code>, <code>{nama_kajian}</code>, <code>{pemateri}</code>, <code>{waktu_kajian}</code>, <code>{tempat_kajian}</code>.
+                            Gunakan variabel: <code>{nama_masjid}</code>, <code>{nama_petugas}</code>, <code>{peran}</code>, <code>{tanggal}</code>, <code>{hijriah}</code>, <code>{waktu_sholat}</code>, <code>{nama_kajian}</code>, <code>{pemateri}</code>, <code>{waktu_kajian}</code>, <code>{tempat_kajian}</code>.
                         </p>
 
                         <div class="form-group">

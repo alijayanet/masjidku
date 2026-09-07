@@ -1300,17 +1300,7 @@ private fun MihrabCenterColumnContent(
                 OfficerDetailRow("KHATIB", khotibName)
                 OfficerDetailRow("IMAM", imamName)
                 OfficerDetailRow("MUADZIN", muadzinName)
-                if (bilalName.isNotBlank()) {
-                    OfficerDetailRow("BILAL", bilalName)
-                } else if (fridaySchedule.khutbahTopic.isNotBlank()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("TEMA", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFDE68A))
-                        Text(fridaySchedule.khutbahTopic, fontSize = 10.5.sp, color = Color(0xFFCBD5E1), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                }
+                OfficerDetailRow("BILAL", bilalName)
             }
         }
         "FINANCE" -> {
@@ -2175,22 +2165,12 @@ private fun CordobaGrandPanel(
                         }
                     }
 
-                    if (fridaySchedule.khutbahTopic.isNotBlank()) {
-                        Text(
-                            text = "Khutbah: \"${fridaySchedule.khutbahTopic}\"",
-                            fontSize = 9.5.sp,
-                            color = Color(0xFFFDE68A),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    } else {
-                        Text(
-                            text = "• Mohon Lurus dan Rapatkan Shaf Sholat • Matikan / Senyapkan Ponsel",
-                            fontSize = 9.sp,
-                            color = Color(0xFFFECDD3),
-                            maxLines = 1
-                        )
-                    }
+                    Text(
+                        text = "• Mohon Lurus dan Rapatkan Shaf Sholat • Matikan / Senyapkan Ponsel",
+                        fontSize = 9.sp,
+                        color = Color(0xFFFECDD3),
+                        maxLines = 1
+                    )
                 }
             }
             "FINANCE_QRIS" -> {

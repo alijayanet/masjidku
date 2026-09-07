@@ -1185,14 +1185,6 @@ private fun TabMultiFridaySettings(
                     )
                 }
 
-                OutlinedTextField(
-                    value = khutbahTopic,
-                    onValueChange = { khutbahTopic = it },
-                    label = { Text("Tema Khutbah Jum'at", fontSize = 11.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
                 Button(
                     onClick = {
                         val updated = currentSchedule.copy(

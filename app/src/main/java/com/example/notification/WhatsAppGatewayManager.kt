@@ -42,7 +42,6 @@ Yth. *{nama_petugas}*,
 Mengingatkan jadwal antum besok sebagai *{peran}* pada Sholat Jum'at di *{nama_masjid}*:
 
 📅 *Hari/Tgl:* {tanggal} ({hijriah})
-🎙️ *Judul Khutbah:* {judul_khutbah}
 ⏰ *Waktu Sholat:* {waktu_sholat}
 
 Mohon konfirmasi kehadirannya. Jazakumullahu khairan katsiran.
@@ -104,14 +103,13 @@ Mohon konfirmasi kehadirannya. Jazakumullahu khairan katsiran.
         prayerTimeStr: String = "11:50 WIB"
     ): String {
         val tpl = if (template.isNotBlank()) template else DEFAULT_TEMPLATE_THURSDAY
-        val topic = if (schedule.khutbahTopic.isNotBlank()) schedule.khutbahTopic else "Tema Khutbah Jum'at"
         return tpl
             .replace("{nama_masjid}", config.mosqueName.ifBlank { "Masjid" })
             .replace("{nama_petugas}", officerName.ifBlank { "Petugas Sholat Jum'at" })
             .replace("{peran}", roleName)
             .replace("{tanggal}", schedule.date.ifBlank { "Jum'at" })
             .replace("{hijriah}", schedule.hijriDate.ifBlank { "Jum'at Barakah" })
-            .replace("{judul_khutbah}", topic)
+            .replace("{judul_khutbah}", schedule.khutbahTopic.ifBlank { "" })
             .replace("{waktu_sholat}", prayerTimeStr)
     }
 

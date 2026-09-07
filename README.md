@@ -18,8 +18,9 @@
   <img src="https://img.shields.io/badge/Kotlin-2.0.0-7F52FF?style=for-the-badge&logo=kotlin" alt="Kotlin" />
   <img src="https://img.shields.io/badge/Jetpack%20Compose-Android%20TV-4285F4?style=for-the-badge&logo=jetpackcompose" alt="Compose" />
   <img src="https://img.shields.io/badge/ExoPlayer%20Media3-RTSP%20Live-FF6F00?style=for-the-badge" alt="Media3" />
-  <img src="https://img.shields.io/badge/Room%20DB-v19-2E7D32?style=for-the-badge&logo=sqlite" alt="Room" />
-  <img src="https://img.shields.io/badge/Version-v1.0.2-1E88E5?style=for-the-badge" alt="Version" />
+  <img src="https://img.shields.io/badge/WhatsApp%20Gateway-Fonnte%20API-25D366?style=for-the-badge&logo=whatsapp" alt="WhatsApp Gateway" />
+  <img src="https://img.shields.io/badge/Room%20DB-v20-2E7D32?style=for-the-badge&logo=sqlite" alt="Room" />
+  <img src="https://img.shields.io/badge/Version-v1.0.3-1E88E5?style=for-the-badge" alt="Version" />
 </p>
 
 ---
@@ -42,13 +43,20 @@
 
 **MasjidKU TV** adalah solusi modern *display informasi digital* (digital signage) masjid yang dirancang khusus untuk layar TV besar (Smart TV, Android TV, Google TV, maupun Set-Top-Box Android). 
 
-Dengan antarmuka yang elegan, waktu sholat yang akurat berbasis koordinat GPS/Kemenag, dan sistem kontrol berbasis web (*Web Remote Control*) yang tertanam langsung di dalam perangkat, pengurus DKM dapat mengatur seluruh konten masjid (keuangan, pengumuman, petugas sholat, audio murottal, dan kamera CCTV) secara praktis langsung dari browser smartphone atau laptop tanpa perlu mencolokkan keyboard/mouse ke TV.
+Dengan antarmuka yang elegan, waktu sholat yang akurat berbasis koordinat GPS/Kemenag, dan sistem kontrol berbasis web (*Web Remote Control*) yang tertanam langsung di dalam perangkat, pengurus DKM dapat mengatur seluruh konten masjid (keuangan, pengumuman, petugas sholat, audio murottal, kamera CCTV, dan WhatsApp Gateway) secara praktis langsung dari browser smartphone atau laptop tanpa perlu mencolokkan keyboard/mouse ke TV.
 
 ---
 
 ## 🚀 Fitur Utama
 
-### 1. 🕌 Jadwal Sholat Otomatis & Presisi
+### 1. 💬 WhatsApp Gateway & Auto-Reminder (Baru di v1.0.3!)
+* **Pengingat Otomatis Petugas Jum'at**: Otomatis mengirim pesan WhatsApp ke Khotib, Imam, Muadzin, dan Bilal pada hari **Kamis (H-1)** dan **Jum'at (Hari H)** pada pukul **09:00 WIB**.
+* **Pengingat Pemateri Kajian**: Tombol 1-klik dan pengingat otomatis jadwal kajian ke Ustadz / Penceramah.
+* **Integrasi Fonnte API**: Cek status koneksi nomor WA, kuota pesan, dan masa aktif langsung dari Web Remote.
+* **Template Pesan Dinamis**: Kustomisasi template WhatsApp dengan variabel otomatis `{nama_masjid}`, `{nama_petugas}`, `{peran}`, `{tanggal}`, `{judul_khutbah}`, `{waktu_sholat}`, dll.
+* **Broadcast Manual 1-Klik**: Kirim pengingat ke seluruh petugas sholat jum'at kapan saja dengan satu sentuhan.
+
+### 2. 🕌 Jadwal Sholat Otomatis & Presisi
 * **Algoritma Perhitungan Astronomis Akurat**: Mendukung metode hisab Kemenag RI, Muslim World League (MWL), Umm al-Qura, ISNA, dll.
 * **Koreksi Menit (Ihtiyat)**: Penyesuaian waktu manual (+/- menit) per jadwal sholat (Subuh, Terbit, Dhuha, Dzuhur, Ashar, Maghrib, Isya).
 * **Countdown Menuju Adzan**: Tampilan hitung mundur real-time saat mendekati waktu masuk sholat.
@@ -56,7 +64,7 @@ Dengan antarmuka yang elegan, waktu sholat yang akurat berbasis koordinat GPS/Ke
 * **Countdown Iqomah Dinamis**: Jeda waktu iqomah yang dapat disesuaikan per waktu sholat.
 * **Mode Layar Redup / Standby Sholat**: Layar otomatis meredup/gelap saat sholat berjamaah berlangsung agar tidak mengganggu kekhusyukan jamaah.
 
-### 2. 🕒 Kustomisasi Jam Digital & Font Realtime
+### 3. 🕒 Kustomisasi Jam Digital & Font Realtime
 * **6 Pilihan Font Eksklusif**:
   * *Default System*
   * *Montserrat Bold* (Modern & Bersih)
@@ -67,34 +75,34 @@ Dengan antarmuka yang elegan, waktu sholat yang akurat berbasis koordinat GPS/Ke
 * **8 Preset Warna Jam**: Putih Bersih, Emas Mewah (*Gold*), Hijau Zamrud (*Emerald*), Cyan Terang, Amber Hangat, Merah Delima, Lime, dan Ungu.
 * **Pilihan Format Detik & Ukuran**: Pengaturan font dan warna tersinkronisasi instan ke seluruh tema tampilan.
 
-### 3. 📹 Multi-Kamera RTSP CCTV & Background Live (Baru di v1.0.2!)
+### 4. 📹 Multi-Kamera RTSP CCTV & Background Live (Baru di v1.0.2!)
 * **Integrasi CCTV IP Camera**: Mendukung protokol RTSP harian (Tapo, Hikvision, Dahua, Ezviz, BARDI, dll) dengan audio muting dan hardware/software decoder fallback.
 * **Multi-Kamera & Penjadwalan Otomatis**: Daftarkan banyak kamera CCTV dan atur agar berganti otomatis di jam-jam tertentu (misal: saat kajian, sholat, atau selepas sholat).
 * **CCTV Live as Screen Background**: Jadikan siaran langsung CCTV ruang utama/mihrab sebagai wallpaper/background bergerak di belakang jadwal sholat dengan lapisan *contrast dimming* yang nyaman di mata.
 
-### 4. 📺 YouTube Live Streaming
+### 5. 📺 YouTube Live Streaming
 * Tampilkan siaran langsung kajian, tabligh akbar, siaran Mekkah/Madinah Live, atau video profil masjid langsung pada area slide media utama TV.
 
-### 5. 📖 Pemutar Murottal 30 Juz & 50+ Qari
+### 6. 📖 Pemutar Murottal 30 Juz & 50+ Qari
 * **Koleksi Lengkap 114 Surah**: Dilengkapi lebih dari 50 pilihan Qari internasional dan nasional ternama (Misyari Rasyid Al-Afasy, Abdurrahman As-Sudais, Sa'ad Al-Ghamidi, dll).
 * **Pemutar Otomatis Sebelum Adzan**: Atur murottal agar berputar otomatis (misal 15 menit sebelum masuk waktu Subuh/Maghrib) dan otomatis berhenti saat adzan berkumandang.
 
-### 6. 💰 Laporan Keuangan Kas Masjid
+### 7. 💰 Laporan Keuangan Kas Masjid
 * Menampilkan saldo kas terkini, total pemasukan, dan pengeluaran kas masjid secara transparan kepada jamaah.
 
-### 7. 👥 Informasi Petugas Sholat Jum'at
-* Menampilkan daftar nama Khotib, Imam, Muadzin, dan Bilal lengkap dengan tanggal pelaksanaan dan judul khutbah.
+### 8. 👥 Informasi Petugas Sholat Jum'at
+* Menampilkan daftar nama Khotib, Imam, Muadzin, dan Bilal lengkap dengan nomor WhatsApp, tanggal pelaksanaan, dan judul khutbah.
 
-### 8. 📢 Running Text (Teks Berjalan) & Maklumat
+### 9. 📢 Running Text (Teks Berjalan) & Maklumat
 * Teks berjalan di bagian bawah layar untuk menyampaikan pengumuman DKM, jadwal kajian, hadits harian, dan himbauan kebersihan masjid.
 
-### 9. 💳 QRIS Donasi & Rekening Infaq
+### 10. 💳 QRIS Donasi & Rekening Infaq
 * Menampilkan gambar barcode QRIS dan nomor rekening donasi masjid pada carousel informasi untuk memudahkan sedekah non-tunai jamaah.
 
-### 10. 📱 Web Remote Control (Port 8080)
+### 11. 📱 Web Remote Control (Port 8080)
 * Server web lokal mandiri (*embedded HTTP server*) di dalam aplikasi. Pengurus DKM cukup membuka browser di HP: `http://[IP-TV]:8080` untuk mengontrol TV secara penuh.
 
-### 11. ⚡ 100% Offline Autonomy
+### 12. ⚡ 100% Offline Autonomy
 * Aplikasi tetap berfungsi normal dan menghitung waktu sholat secara mandiri tanpa harus selalu terhubung ke jaringan internet.
 
 ---

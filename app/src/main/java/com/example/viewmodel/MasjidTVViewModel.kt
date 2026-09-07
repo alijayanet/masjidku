@@ -263,6 +263,7 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                 val config = _uiState.value.config
                 val currentMinuteTotal = hour * 60 + min
                 val currentSecsTotal = hour * 3600 + min * 60 + sec
+                val todayDateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(cal.time)
 
                 if (schedule != null) {
                     fun parseSeconds(timeStr: String): Int {
@@ -282,8 +283,6 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                         PrayerName.MAGHRIB to parseSeconds(schedule.maghrib),
                         PrayerName.ISYA to parseSeconds(schedule.isya)
                     )
-
-                    val todayDateStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(cal.time)
                     val isFriday = cal.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
 
                     for ((pName, pSec) in prayerCheckList) {
@@ -386,7 +385,108 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
 
+                // 5. Automatic WhatsApp Gateway Reminders (Kamis & Jum'at pk 09:00 WIB)
+                if (sec == 0 && config.waGatewayEnabled && config.waGatewayToken.isNotBlank()) {
+                    checkAndTriggerWhatsAppReminders(cal, config, todayDateStr)
+                }
+
                 delay(1000)
+            }
+        }
+    }
+
+    private var isSendingWaReminder = false
+
+    private fun checkAndTriggerWhatsAppReminders(cal: Calendar, config: MosqueConfig, todayDateStr: String) {
+        if (isSendingWaReminder) return
+        val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+        val hour = cal.get(Calendar.HOUR_OF_DAY)
+
+        // 1. Thursday reminder at waGatewaySendThursdayHour (default 9:00 AM)
+        if (dayOfWeek == Calendar.THURSDAY && hour >= config.waGatewaySendThursdayHour && config.waGatewayLastSentThursdayDate != todayDateStr) {
+            isSendingWaReminder = true
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val schedule = _uiState.value.fridaySchedule
+                    val prayerTimeStr = (_uiState.value.prayerSchedule?.dzuhur ?: "11:50") + " WIB"
+                    val logList = mutableListOf<String>()
+
+                    val officers = listOf(
+                        Triple(schedule.khotib, schedule.khotibPhone, "Khotib Sholat Jum'at"),
+                        Triple(schedule.imam, schedule.imamPhone, "Imam Sholat Jum'at"),
+                        Triple(schedule.muadzin, schedule.muadzinPhone, "Muadzin Sholat Jum'at"),
+                        Triple(schedule.bilal, schedule.bilalPhone, "Bilal Sholat Jum'at")
+                    )
+
+                    for ((name, phone, role) in officers) {
+                        if (phone.isNotBlank()) {
+                            val msg = com.example.notification.WhatsAppGatewayManager.formatFridayMessage(
+                                template = config.waGatewayTemplateThursday,
+                                config = config,
+                                schedule = schedule,
+                                officerName = name,
+                                roleName = role,
+                                prayerTimeStr = prayerTimeStr
+                            )
+                            val res = com.example.notification.WhatsAppGatewayManager.sendMessage(
+                                token = config.waGatewayToken,
+                                targetPhone = phone,
+                                messageText = msg
+                            )
+                            logList.add("${role} ($name): ${if (res.success) "Sukses" else "Gagal (${res.message})"}")
+                        }
+                    }
+
+                    val logSummary = "[Auto Kamis $todayDateStr] " + logList.joinToString(" | ")
+                    repository.updateWaGatewayLastSent(thursdayDate = todayDateStr, logJson = logSummary)
+                } catch (_: Throwable) {
+                } finally {
+                    isSendingWaReminder = false
+                }
+            }
+        }
+
+        // 2. Friday reminder at waGatewaySendFridayHour (default 9:00 AM)
+        if (dayOfWeek == Calendar.FRIDAY && hour >= config.waGatewaySendFridayHour && config.waGatewayLastSentFridayDate != todayDateStr) {
+            isSendingWaReminder = true
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val schedule = _uiState.value.fridaySchedule
+                    val prayerTimeStr = (_uiState.value.prayerSchedule?.dzuhur ?: "11:50") + " WIB"
+                    val logList = mutableListOf<String>()
+
+                    val officers = listOf(
+                        Triple(schedule.khotib, schedule.khotibPhone, "Khotib Sholat Jum'at"),
+                        Triple(schedule.imam, schedule.imamPhone, "Imam Sholat Jum'at"),
+                        Triple(schedule.muadzin, schedule.muadzinPhone, "Muadzin Sholat Jum'at"),
+                        Triple(schedule.bilal, schedule.bilalPhone, "Bilal Sholat Jum'at")
+                    )
+
+                    for ((name, phone, role) in officers) {
+                        if (phone.isNotBlank()) {
+                            val msg = com.example.notification.WhatsAppGatewayManager.formatFridayMessage(
+                                template = config.waGatewayTemplateFriday,
+                                config = config,
+                                schedule = schedule,
+                                officerName = name,
+                                roleName = role,
+                                prayerTimeStr = prayerTimeStr
+                            )
+                            val res = com.example.notification.WhatsAppGatewayManager.sendMessage(
+                                token = config.waGatewayToken,
+                                targetPhone = phone,
+                                messageText = msg
+                            )
+                            logList.add("${role} ($name): ${if (res.success) "Sukses" else "Gagal (${res.message})"}")
+                        }
+                    }
+
+                    val logSummary = "[Auto Jum'at $todayDateStr] " + logList.joinToString(" | ")
+                    repository.updateWaGatewayLastSent(fridayDate = todayDateStr, logJson = logSummary)
+                } catch (_: Throwable) {
+                } finally {
+                    isSendingWaReminder = false
+                }
             }
         }
     }
@@ -840,15 +940,15 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun addActivity(title: String, speaker: String, date: String, time: String, location: String, description: String, category: String) {
+    fun addActivity(title: String, speaker: String, date: String, time: String, location: String, description: String, category: String, speakerPhone: String = "") {
         viewModelScope.launch {
-            repository.addActivity(title, speaker, date, time, location, description, category)
+            repository.addActivity(title, speaker, speakerPhone, date, time, location, description, category)
         }
     }
 
-    fun updateActivity(id: Long, title: String, speaker: String, date: String, time: String, location: String, description: String, category: String) {
+    fun updateActivity(id: Long, title: String, speaker: String, date: String, time: String, location: String, description: String, category: String, speakerPhone: String = "") {
         viewModelScope.launch {
-            repository.updateActivity(id, title, speaker, date, time, location, description, category)
+            repository.updateActivity(id, title, speaker, speakerPhone, date, time, location, description, category)
         }
     }
 

@@ -711,6 +711,46 @@ class LocalHttpServer(
                         sendResponse(output, "200 OK", "application/json; charset=UTF-8", res.toByteArray(StandardCharsets.UTF_8))
                     }
                 }
+                path == "/api/wa-gateway/config" && method == "POST" -> {
+                    if (!isAuthorized(headers, pathWithQuery, body)) {
+                        sendUnauthorized(output)
+                    } else {
+                        val res = handleSaveWaGatewayConfig(body)
+                        sendResponse(output, "200 OK", "application/json; charset=UTF-8", res.toByteArray(StandardCharsets.UTF_8))
+                    }
+                }
+                path == "/api/wa-gateway/check-status" && method == "POST" -> {
+                    if (!isAuthorized(headers, pathWithQuery, body)) {
+                        sendUnauthorized(output)
+                    } else {
+                        val res = handleCheckWaDeviceStatus(body)
+                        sendResponse(output, "200 OK", "application/json; charset=UTF-8", res.toByteArray(StandardCharsets.UTF_8))
+                    }
+                }
+                path == "/api/wa-gateway/send-test" && method == "POST" -> {
+                    if (!isAuthorized(headers, pathWithQuery, body)) {
+                        sendUnauthorized(output)
+                    } else {
+                        val res = handleSendTestWa(body)
+                        sendResponse(output, "200 OK", "application/json; charset=UTF-8", res.toByteArray(StandardCharsets.UTF_8))
+                    }
+                }
+                path == "/api/wa-gateway/send-friday-reminder" && method == "POST" -> {
+                    if (!isAuthorized(headers, pathWithQuery, body)) {
+                        sendUnauthorized(output)
+                    } else {
+                        val res = handleSendFridayBroadcast(body)
+                        sendResponse(output, "200 OK", "application/json; charset=UTF-8", res.toByteArray(StandardCharsets.UTF_8))
+                    }
+                }
+                path == "/api/wa-gateway/send-activity-reminder" && method == "POST" -> {
+                    if (!isAuthorized(headers, pathWithQuery, body)) {
+                        sendUnauthorized(output)
+                    } else {
+                        val res = handleSendActivityReminder(body)
+                        sendResponse(output, "200 OK", "application/json; charset=UTF-8", res.toByteArray(StandardCharsets.UTF_8))
+                    }
+                }
                 path.startsWith("/media/murottal/") -> {
                     handleServeMurottalAudio(path, output)
                 }
@@ -1605,9 +1645,13 @@ class LocalHttpServer(
                     date = if (weekId == id) (params["date"] ?: current.date) else current.date,
                     hijriDate = params["hijriDate"] ?: current.hijriDate,
                     khotib = params["khotib"] ?: current.khotib,
+                    khotibPhone = params["khotibPhone"] ?: current.khotibPhone,
                     imam = params["imam"] ?: current.imam,
+                    imamPhone = params["imamPhone"] ?: current.imamPhone,
                     muadzin = params["muadzin"] ?: current.muadzin,
+                    muadzinPhone = params["muadzinPhone"] ?: current.muadzinPhone,
                     bilal = params["bilal"] ?: current.bilal,
+                    bilalPhone = params["bilalPhone"] ?: current.bilalPhone,
                     khutbahTopic = params["khutbahTopic"] ?: current.khutbahTopic,
                     notes = params["notes"] ?: current.notes
                 )
@@ -1621,9 +1665,13 @@ class LocalHttpServer(
                 date = params["date"] ?: current.date,
                 hijriDate = params["hijriDate"] ?: current.hijriDate,
                 khotib = params["khotib"] ?: current.khotib,
+                khotibPhone = params["khotibPhone"] ?: current.khotibPhone,
                 imam = params["imam"] ?: current.imam,
+                imamPhone = params["imamPhone"] ?: current.imamPhone,
                 muadzin = params["muadzin"] ?: current.muadzin,
+                muadzinPhone = params["muadzinPhone"] ?: current.muadzinPhone,
                 bilal = params["bilal"] ?: current.bilal,
+                bilalPhone = params["bilalPhone"] ?: current.bilalPhone,
                 khutbahTopic = params["khutbahTopic"] ?: current.khutbahTopic,
                 notes = params["notes"] ?: current.notes
             )
@@ -1635,12 +1683,22 @@ class LocalHttpServer(
         val params = parseParams(body)
         val title = params["title"] ?: "Kajian Rutin"
         val speaker = params["speaker"] ?: "Ustadz Pembicara"
+        val speakerPhone = params["speakerPhone"] ?: ""
         val date = params["date"] ?: "Ahad Pagi"
         val time = params["time"] ?: "05.30 WIB"
         val location = params["location"] ?: "Ruang Utama Masjid"
         val description = params["description"] ?: ""
         val category = params["category"] ?: "Kajian Rutin"
-        repository.addActivity(title, speaker, date, time, location, description, category)
+        repository.addActivity(
+            title = title,
+            speaker = speaker,
+            speakerPhone = speakerPhone,
+            date = date,
+            time = time,
+            location = location,
+            description = description,
+            category = category
+        )
     }
 
     private suspend fun handleUpdateActivity(body: String) {
@@ -1648,12 +1706,188 @@ class LocalHttpServer(
         val id = params["id"]?.toLongOrNull() ?: return
         val title = params["title"] ?: "Kajian Rutin"
         val speaker = params["speaker"] ?: "Ustadz Pembicara"
+        val speakerPhone = params["speakerPhone"] ?: ""
         val date = params["date"] ?: "Ahad Pagi"
         val time = params["time"] ?: "05.30 WIB"
         val location = params["location"] ?: "Ruang Utama Masjid"
         val description = params["description"] ?: ""
         val category = params["category"] ?: "Kajian Rutin"
-        repository.updateActivity(id, title, speaker, date, time, location, description, category)
+        repository.updateActivity(
+            id = id,
+            title = title,
+            speaker = speaker,
+            speakerPhone = speakerPhone,
+            date = date,
+            time = time,
+            location = location,
+            description = description,
+            category = category
+        )
+    }
+
+    private suspend fun handleSaveWaGatewayConfig(body: String): String {
+        val params = parseParams(body)
+        val enabled = params["enabled"]?.toBooleanStrictOrNull() ?: false
+        val token = params["token"] ?: ""
+        val hourThu = params["sendHourThursday"]?.toIntOrNull() ?: 9
+        val hourFri = params["sendHourFriday"]?.toIntOrNull() ?: 9
+        val templateThu = params["templateThursday"] ?: ""
+        val templateFri = params["templateFriday"] ?: ""
+        val templateKajian = params["templateKajian"] ?: ""
+
+        val cfg = repository.configFlow.first()
+        repository.saveConfig(
+            cfg.copy(
+                waGatewayEnabled = enabled,
+                waGatewayToken = token,
+                waGatewaySendThursdayHour = hourThu,
+                waGatewaySendFridayHour = hourFri,
+                waGatewayTemplateThursday = if (templateThu.isNotBlank()) templateThu else cfg.waGatewayTemplateThursday,
+                waGatewayTemplateFriday = if (templateFri.isNotBlank()) templateFri else cfg.waGatewayTemplateFriday,
+                waGatewayTemplateKajian = if (templateKajian.isNotBlank()) templateKajian else cfg.waGatewayTemplateKajian
+            )
+        )
+        return "{\"status\":\"ok\",\"message\":\"Pengaturan WhatsApp Gateway berhasil disimpan!\"}"
+    }
+
+    private suspend fun handleCheckWaDeviceStatus(body: String): String {
+        val params = parseParams(body)
+        var token = params["token"] ?: ""
+        if (token.isBlank()) {
+            val cfg = repository.configFlow.first()
+            token = cfg.waGatewayToken
+        }
+        if (token.isBlank()) {
+            return "{\"status\":\"error\",\"message\":\"Token Fonnte belum diisi\"}"
+        }
+        val status = com.example.notification.WhatsAppGatewayManager.checkDeviceStatus(token)
+        val res = JSONObject().apply {
+            put("status", if (status.success) "ok" else "error")
+            put("deviceStatus", status.status)
+            put("deviceName", status.deviceName)
+            put("devicePhone", status.devicePhone)
+            put("quota", status.quota)
+            put("expired", status.expired)
+            put("message", status.message)
+        }
+        return res.toString()
+    }
+
+    private suspend fun handleSendTestWa(body: String): String {
+        val params = parseParams(body)
+        var token = params["token"] ?: ""
+        val phone = params["phone"] ?: ""
+        val message = params["message"] ?: "Halo! Ini adalah pesan uji coba dari Sistem MasjidKU TV WhatsApp Gateway."
+        if (token.isBlank()) {
+            val cfg = repository.configFlow.first()
+            token = cfg.waGatewayToken
+        }
+        if (token.isBlank()) {
+            return "{\"status\":\"error\",\"message\":\"Token Fonnte belum diisi\"}"
+        }
+        if (phone.isBlank()) {
+            return "{\"status\":\"error\",\"message\":\"Nomor WhatsApp tujuan belum diisi\"}"
+        }
+        val sendRes = com.example.notification.WhatsAppGatewayManager.sendMessage(token, phone, message)
+        val res = JSONObject().apply {
+            put("status", if (sendRes.success) "ok" else "error")
+            put("message", sendRes.message)
+        }
+        return res.toString()
+    }
+
+    private suspend fun handleSendFridayBroadcast(body: String): String {
+        val params = parseParams(body)
+        val type = params["type"] ?: "THURSDAY" // "THURSDAY" or "FRIDAY"
+        val weekId = params["weekId"]?.toLongOrNull() ?: com.example.viewmodel.MasjidTVViewModel.getUpcomingFridayWeekIndex(java.util.Calendar.getInstance())
+
+        val cfg = repository.configFlow.first()
+        val allFriday = repository.allFridaySchedulesFlow.first()
+        val friday = allFriday.find { it.id == weekId } ?: repository.fridayScheduleFlow.first()
+
+        val token = cfg.waGatewayToken
+        if (token.isBlank()) {
+            return "{\"status\":\"error\",\"message\":\"Token Fonnte belum diisi di Pengaturan WhatsApp Gateway\"}"
+        }
+
+        val template = if (type == "THURSDAY") {
+            if (cfg.waGatewayTemplateThursday.isNotBlank()) cfg.waGatewayTemplateThursday else com.example.notification.WhatsAppGatewayManager.DEFAULT_TEMPLATE_THURSDAY
+        } else {
+            if (cfg.waGatewayTemplateFriday.isNotBlank()) cfg.waGatewayTemplateFriday else com.example.notification.WhatsAppGatewayManager.DEFAULT_TEMPLATE_FRIDAY
+        }
+
+        val officers = listOf(
+            Triple("Khotib", friday.khotib, friday.khotibPhone),
+            Triple("Imam Sholat", friday.imam, friday.imamPhone),
+            Triple("Muadzin", friday.muadzin, friday.muadzinPhone),
+            Triple("Bilal / Badal", friday.bilal, friday.bilalPhone)
+        )
+
+        var sentCount = 0
+        val errors = mutableListOf<String>()
+
+        for ((role, name, phone) in officers) {
+            if (name.isNotBlank() && phone.isNotBlank()) {
+                val msg = com.example.notification.WhatsAppGatewayManager.formatFridayMessage(
+                    template = template,
+                    config = cfg,
+                    schedule = friday,
+                    officerName = name,
+                    roleName = role,
+                    prayerTimeStr = "11:55 WIB"
+                )
+                val sendRes = com.example.notification.WhatsAppGatewayManager.sendMessage(token, phone, msg)
+                if (sendRes.success) {
+                    sentCount++
+                } else {
+                    errors.add("$role ($name): ${sendRes.message}")
+                }
+            }
+        }
+
+        val nowStr = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+        val logEntry = "Manual broadcast ($type): $sentCount pesan terkirim (${errors.size} gagal) pada $nowStr"
+        repository.updateWaGatewayLastSent(
+            thursdayDate = if (type == "THURSDAY") java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date()) else cfg.waGatewayLastSentThursdayDate,
+            fridayDate = if (type == "FRIDAY") java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date()) else cfg.waGatewayLastSentFridayDate,
+            logJson = logEntry
+        )
+
+        val res = JSONObject().apply {
+            put("status", if (sentCount > 0 || errors.isEmpty()) "ok" else "error")
+            put("message", "Berhasil mengirim $sentCount pesan pengingat Sholat Jum'at." + if (errors.isNotEmpty()) " Gagal: " + errors.joinToString(", ") else "")
+        }
+        return res.toString()
+    }
+
+    private suspend fun handleSendActivityReminder(body: String): String {
+        val params = parseParams(body)
+        val activityId = params["id"]?.toLongOrNull() ?: return "{\"status\":\"error\",\"message\":\"ID kegiatan tidak valid\"}"
+        val activities = repository.activitiesFlow.first()
+        val activity = activities.find { it.id == activityId } ?: return "{\"status\":\"error\",\"message\":\"Kegiatan tidak ditemukan\"}"
+
+        val cfg = repository.configFlow.first()
+        val token = cfg.waGatewayToken
+        if (token.isBlank()) {
+            return "{\"status\":\"error\",\"message\":\"Token Fonnte belum diisi di Pengaturan WhatsApp Gateway\"}"
+        }
+        if (activity.speakerPhone.isBlank()) {
+            return "{\"status\":\"error\",\"message\":\"Nomor WhatsApp pemateri / ustadz belum diisi untuk agenda ini\"}"
+        }
+
+        val template = if (cfg.waGatewayTemplateKajian.isNotBlank()) cfg.waGatewayTemplateKajian else com.example.notification.WhatsAppGatewayManager.DEFAULT_TEMPLATE_KAJIAN
+        val msg = com.example.notification.WhatsAppGatewayManager.formatKajianMessage(
+            template = template,
+            config = cfg,
+            activity = activity
+        )
+
+        val sendRes = com.example.notification.WhatsAppGatewayManager.sendMessage(token, activity.speakerPhone, msg)
+        val res = JSONObject().apply {
+            put("status", if (sendRes.success) "ok" else "error")
+            put("message", if (sendRes.success) "Pesan pengingat agenda dakwah berhasil dikirim ke ${activity.speaker} (${activity.speakerPhone})!" else "Gagal kirim pesan: ${sendRes.message}")
+        }
+        return res.toString()
     }
 
     private suspend fun handleDeleteActivity(body: String) {
@@ -1993,6 +2227,18 @@ class LocalHttpServer(
             put("clockColor", config.clockColor)
             put("clockColonColor", config.clockColonColor)
             put("clockSecondsColor", config.clockSecondsColor)
+
+            put("waGatewayEnabled", config.waGatewayEnabled)
+            put("waGatewayProvider", config.waGatewayProvider)
+            put("waGatewayToken", config.waGatewayToken)
+            put("waGatewaySendThursdayHour", config.waGatewaySendThursdayHour)
+            put("waGatewaySendFridayHour", config.waGatewaySendFridayHour)
+            put("waGatewayLastSentThursdayDate", config.waGatewayLastSentThursdayDate)
+            put("waGatewayLastSentFridayDate", config.waGatewayLastSentFridayDate)
+            put("waGatewayTemplateThursday", config.waGatewayTemplateThursday)
+            put("waGatewayTemplateFriday", config.waGatewayTemplateFriday)
+            put("waGatewayTemplateKajian", config.waGatewayTemplateKajian)
+            put("waGatewayLastLogJson", config.waGatewayLastLogJson)
         }
         json.put("config", cfgJson)
 
@@ -2096,9 +2342,13 @@ class LocalHttpServer(
                 put("date", f.date)
                 put("hijriDate", f.hijriDate)
                 put("khotib", f.khotib)
+                put("khotibPhone", f.khotibPhone)
                 put("imam", f.imam)
+                put("imamPhone", f.imamPhone)
                 put("muadzin", f.muadzin)
+                put("muadzinPhone", f.muadzinPhone)
                 put("bilal", f.bilal)
+                put("bilalPhone", f.bilalPhone)
                 put("khutbahTopic", f.khutbahTopic)
                 put("notes", f.notes)
             })
@@ -2113,9 +2363,13 @@ class LocalHttpServer(
             put("date", friday.date)
             put("hijriDate", friday.hijriDate)
             put("khotib", friday.khotib)
+            put("khotibPhone", friday.khotibPhone)
             put("imam", friday.imam)
+            put("imamPhone", friday.imamPhone)
             put("muadzin", friday.muadzin)
+            put("muadzinPhone", friday.muadzinPhone)
             put("bilal", friday.bilal)
+            put("bilalPhone", friday.bilalPhone)
             put("khutbahTopic", friday.khutbahTopic)
             put("notes", friday.notes)
         }
@@ -2127,6 +2381,7 @@ class LocalHttpServer(
                 put("id", a.id)
                 put("title", a.title)
                 put("speaker", a.speaker)
+                put("speakerPhone", a.speakerPhone)
                 put("date", a.date)
                 put("time", a.time)
                 put("location", a.location)
@@ -2605,6 +2860,7 @@ class LocalHttpServer(
         <button class="tab-btn" onclick="switchTab('tab-youtube')">🔴 Siaran Live & CCTV</button>
         <button class="tab-btn" onclick="switchTab('tab-keuangan')">💰 Keuangan</button>
         <button class="tab-btn" onclick="switchTab('tab-jumat')">📋 Petugas Jum'at</button>
+        <button class="tab-btn" onclick="switchTab('tab-whatsapp')">💬 WhatsApp Gateway</button>
         <button class="tab-btn" onclick="switchTab('tab-kegiatan')">📅 Kegiatan</button>
         <button class="tab-btn" onclick="switchTab('tab-running')">📜 Running Text</button>
         <button class="tab-btn" onclick="switchTab('tab-media')">🖼️ Gambar & Background</button>
@@ -3040,21 +3296,157 @@ class LocalHttpServer(
                     </div>
                     <div class="grid-2">
                         <div class="form-group"><label>🎙️ Nama Khotib Jum'at</label><input type="text" id="friKhotib" class="form-control" placeholder="Nama Khotib"></div>
+                        <div class="form-group"><label>📱 No. WhatsApp Khotib</label><input type="text" id="friKhotibPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
+                    </div>
+                    <div class="grid-2">
                         <div class="form-group"><label>🕌 Nama Imam Sholat</label><input type="text" id="friImam" class="form-control" placeholder="Nama Imam"></div>
+                        <div class="form-group"><label>📱 No. WhatsApp Imam</label><input type="text" id="friImamPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
                     </div>
                     <div class="grid-2">
                         <div class="form-group"><label>📢 Nama Muadzin</label><input type="text" id="friMuadzin" class="form-control" placeholder="Nama Muadzin"></div>
+                        <div class="form-group"><label>📱 No. WhatsApp Muadzin</label><input type="text" id="friMuadzinPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
+                    </div>
+                    <div class="grid-2">
                         <div class="form-group"><label>📜 Nama Bilal / Muraqqi</label><input type="text" id="friBilal" class="form-control" placeholder="Nama Bilal"></div>
+                        <div class="form-group"><label>📱 No. WhatsApp Bilal</label><input type="text" id="friBilalPhone" class="form-control" placeholder="Contoh: 08123456789"></div>
                     </div>
                     <div class="form-group"><label>📖 Catatan Khutbah / Jadwal</label><input type="text" id="friNotes" class="form-control" placeholder="Catatan tambahan (opsional)"></div>
                     <div class="form-group" style="margin:12px 0 16px 0; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border:1px dashed rgba(255,255,255,0.2);">
                         <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#FDE68A;">
                             <input type="checkbox" id="friApplyAll" style="width:20px; height:20px; accent-color:#10B981;">
-                            <span>Salin & Terapkan nama petugas ini ke <strong>Semua Minggu Jum'at (Jum'at 1 s/d 5)</strong></span>
+                            <span>Salin & Terapkan nama & no. WA petugas ini ke <strong>Semua Minggu Jum'at (Jum'at 1 s/d 5)</strong></span>
                         </label>
                     </div>
                     <button type="submit" class="btn-primary" id="btnSaveFri" style="font-size:15px; padding:12px;">💾 Simpan & Perbarui Tampilan TV</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- 4. TAB WHATSAPP GATEWAY (FONNTE) -->
+        <div id="tab-whatsapp" class="section-tab">
+            <!-- 1. Status & Koneksi Akun Fonnte -->
+            <div class="card" style="border: 2px solid #25D366; background: #F0FDF4;">
+                <div class="card-header" style="border-bottom: 1px solid #BBF7D0;">
+                    <h2 style="color: #166534; display:flex; align-items:center; gap:8px;">
+                        <span>💬</span> Status Koneksi WhatsApp Gateway (Fonnte API)
+                    </h2>
+                </div>
+                <div style="background:#DCFCE7; border:1px solid #86EFAC; border-radius:8px; padding:12px; margin-bottom:14px; font-size:12.5px; color:#14532D;">
+                    💡 <strong>Integrasi WhatsApp Otomatis:</strong> Aplikasi MasjidKU-TV dapat mengirimkan pesan konfirmasi / pengingat jadwal secara otomatis kepada <strong>Khotib, Imam, Muadzin, dan Bilal</strong> setiap hari <strong>Kamis (H-1) & Jum'at (Hari H) pukul 09:00 WIB</strong>, serta pengingat pemateri kajian. Menggunakan API gateway dari <strong>Fonnte.com</strong>.
+                </div>
+
+                <div id="waDeviceStatusBox" style="padding:14px; border-radius:8px; background:#fff; border:1px solid #CBD5E1; margin-bottom:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-weight:700; color:#1E293B;">Status Akun & Perangkat WA:</span>
+                        <span id="waStatusBadge" style="background:#E2E8F0; color:#475569; padding:4px 10px; border-radius:12px; font-size:11.5px; font-weight:700;">BELUM DIKONFIGURASI</span>
+                    </div>
+                    <div id="waStatusDetails" style="font-size:12px; color:#64748B;">
+                        Masukkan API Token Fonnte di bawah ini untuk menghubungkan akun WhatsApp.
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <button type="button" class="btn-primary" style="background:#16A34A; border-color:#15803D;" onclick="checkWaDeviceStatus()">
+                        🔄 Cek Koneksi Akun Fonnte Sekarang
+                    </button>
+                    <button type="button" class="btn-gold" onclick="sendTestWaModal()">
+                        📨 Kirim Pesan WhatsApp Uji Coba (Tes)
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Pengaturan Token & Waktu Kirim -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>⚙️ Pengaturan Token & Jam Pengiriman Otomatis</h2>
+                </div>
+                <form id="formWaConfig" onsubmit="saveWaConfig(event)">
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:700; font-size:14px; color:#15803D;">
+                            <input type="checkbox" id="cfgWaEnabled" style="width:20px; height:20px; accent-color:#16A34A;">
+                            <span>Aktifkan Pengingat Otomatis via WhatsApp (Auto-Reminder)</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>API Token Fonnte (Dapatkan dari dashboard.fonnte.com):</label>
+                        <input type="text" id="cfgWaToken" class="form-control" placeholder="Contoh: a1b2c3d4e5f6..." autocomplete="off">
+                        <small style="color:#64748B; font-size:11px;">Daftar gratis / login di <a href="https://fonnte.com" target="_blank" style="color:#16A34A; font-weight:700;">https://fonnte.com</a>, scan QR WhatsApp Anda, lalu salin Token API ke sini.</small>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Jam Pengiriman Hari Kamis (H-1 Sholat Jum'at):</label>
+                            <select id="cfgWaSendThursdayHour" class="form-control">
+                                <option value="7">07:00 WIB (Pagi)</option>
+                                <option value="8">08:00 WIB (Pagi)</option>
+                                <option value="9" selected>09:00 WIB (Standar Rekomendasi)</option>
+                                <option value="10">10:00 WIB (Siang)</option>
+                                <option value="16">16:00 WIB (Sore ba'da Ashar)</option>
+                                <option value="19">19:30 WIB (Malam ba'da Isya)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Jam Pengiriman Hari Jum'at (Hari H Sholat Jum'at):</label>
+                            <select id="cfgWaSendFridayHour" class="form-control">
+                                <option value="6">06:00 WIB (Pagi)</option>
+                                <option value="7">07:00 WIB (Pagi)</option>
+                                <option value="8">08:00 WIB (Pagi)</option>
+                                <option value="9" selected>09:00 WIB (Standar Rekomendasi)</option>
+                                <option value="10">10:00 WIB (Menjelang Jum'at)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 3. Template Pesan Kustom -->
+                    <div style="margin-top:20px; border-top:1px solid #E2E8F0; padding-top:16px;">
+                        <h3 style="font-size:14px; font-weight:700; color:#1E293B; margin-bottom:10px;">
+                            📝 Template Pesan WhatsApp (Dapat Dikustomisasi)
+                        </h3>
+                        <p style="font-size:12px; color:#64748B; margin-bottom:12px;">
+                            Gunakan variabel: <code>{nama_masjid}</code>, <code>{nama_petugas}</code>, <code>{peran}</code>, <code>{tanggal}</code>, <code>{hijriah}</code>, <code>{judul_khutbah}</code>, <code>{waktu_sholat}</code>, <code>{nama_kajian}</code>, <code>{pemateri}</code>, <code>{waktu_kajian}</code>, <code>{tempat_kajian}</code>.
+                        </p>
+
+                        <div class="form-group">
+                            <label>Template Pesan Hari Kamis (H-1 Sholat Jum'at):</label>
+                            <textarea id="cfgWaTemplateThursday" class="form-control" rows="6" placeholder="Biarkan kosong untuk menggunakan template bawaan yang rapi"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Template Pesan Hari Jum'at (Hari H Sholat Jum'at):</label>
+                            <textarea id="cfgWaTemplateFriday" class="form-control" rows="6" placeholder="Biarkan kosong untuk menggunakan template bawaan yang rapi"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Template Pesan Pengingat Pemateri Kajian:</label>
+                            <textarea id="cfgWaTemplateKajian" class="form-control" rows="6" placeholder="Biarkan kosong untuk menggunakan template bawaan yang rapi"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width:100%; font-size:15px; padding:12px; background:#16A34A; border-color:#15803D;">
+                        💾 Simpan Pengaturan WhatsApp Gateway
+                    </button>
+                </form>
+            </div>
+
+            <!-- 4. Broadcast Manual 1-Klik -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🚀 Kirim Pengingat Manual Sekarang (Broadcast 1-Klik)</h2>
+                </div>
+                <p style="font-size:13px; color:#475569; margin-bottom:14px;">
+                    Kirim pengingat WhatsApp secara langsung kepada seluruh petugas Sholat Jum'at pekan ini tanpa menunggu jam otomatis.
+                </p>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button type="button" class="btn-primary" style="background:#0284C7; border-color:#0369A1;" onclick="sendManualFridayBroadcast('THURSDAY')">
+                        📨 Kirim Format Pengingat H-1 (Kamis) ke Petugas Jum'at Sekarang
+                    </button>
+                    <button type="button" class="btn-primary" style="background:#16A34A; border-color:#15803D;" onclick="sendManualFridayBroadcast('FRIDAY')">
+                        📢 Kirim Format Pengingat Hari H (Jum'at) ke Petugas Jum'at Sekarang
+                    </button>
+                </div>
+
+                <div id="waBroadcastLogBox" style="display:none; margin-top:16px; padding:12px; background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; font-size:12px; color:#334155;"></div>
             </div>
         </div>
 
@@ -3069,9 +3461,15 @@ class LocalHttpServer(
                         <label>Judul Acara / Kajian</label>
                         <input type="text" id="actTitle" class="form-control" placeholder="Contoh: Kajian Tafsir Jalalain" required>
                     </div>
-                    <div class="form-group">
-                        <label>Penceramah / Ustadz</label>
-                        <input type="text" id="actSpeaker" class="form-control" placeholder="Nama Penceramah" required>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Penceramah / Ustadz</label>
+                            <input type="text" id="actSpeaker" class="form-control" placeholder="Nama Penceramah" required>
+                        </div>
+                        <div class="form-group">
+                            <label>📱 No. WhatsApp Penceramah (Opsional)</label>
+                            <input type="text" id="actSpeakerPhone" class="form-control" placeholder="Contoh: 08123456789">
+                        </div>
                     </div>
                     <div class="grid-2">
                         <div class="form-group">
@@ -4639,22 +5037,54 @@ class LocalHttpServer(
             }
             renderFridayWeek(window.currentFriWeek);
 
+            // WhatsApp Gateway Config Fields
+            if (document.getElementById('cfgWaEnabled')) {
+                document.getElementById('cfgWaEnabled').checked = cfg.waGatewayEnabled === true;
+            }
+            if (document.getElementById('cfgWaToken')) {
+                document.getElementById('cfgWaToken').value = cfg.waGatewayToken || '';
+            }
+            if (document.getElementById('cfgWaSendThursdayHour')) {
+                document.getElementById('cfgWaSendThursdayHour').value = (cfg.waGatewaySendThursdayHour || 9).toString();
+            }
+            if (document.getElementById('cfgWaSendFridayHour')) {
+                document.getElementById('cfgWaSendFridayHour').value = (cfg.waGatewaySendFridayHour || 9).toString();
+            }
+            if (document.getElementById('cfgWaTemplateThursday')) {
+                document.getElementById('cfgWaTemplateThursday').value = cfg.waGatewayTemplateThursday || '';
+            }
+            if (document.getElementById('cfgWaTemplateFriday')) {
+                document.getElementById('cfgWaTemplateFriday').value = cfg.waGatewayTemplateFriday || '';
+            }
+            if (document.getElementById('cfgWaTemplateKajian')) {
+                document.getElementById('cfgWaTemplateKajian').value = cfg.waGatewayTemplateKajian || '';
+            }
+            if (cfg.waGatewayLastLogJson && document.getElementById('waBroadcastLogBox')) {
+                document.getElementById('waBroadcastLogBox').style.display = 'block';
+                document.getElementById('waBroadcastLogBox').innerHTML = '🕒 <strong>Riwayat Pengiriman Terakhir:</strong> ' + escapeHtml(cfg.waGatewayLastLogJson);
+            }
+
             // Activities (Full CRUD)
             const actList = document.getElementById('activityList');
             actList.innerHTML = '';
             (data.activities || []).forEach(function(a) {
                 const li = document.createElement('li');
                 li.className = 'item-row';
+                const phoneLabel = a.speakerPhone ? ' <span style="background:#DCFCE7; color:#15803D; font-size:11px; padding:2px 6px; border-radius:4px; font-weight:600;">📱 ' + escapeHtml(a.speakerPhone) + '</span>' : '';
                 li.innerHTML = '<div class="item-meta">' +
                     '<div class="item-title">📖 ' + escapeHtml(a.title) + '</div>' +
-                    '<div class="item-sub">🎙️ ' + escapeHtml(a.speaker) + ' &bull; ' + escapeHtml(a.date) + ' (' + escapeHtml(a.time) + ') [' + escapeHtml(a.location) + ']</div>' +
+                    '<div class="item-sub">🎙️ ' + escapeHtml(a.speaker) + phoneLabel + ' &bull; ' + escapeHtml(a.date) + ' (' + escapeHtml(a.time) + ') [' + escapeHtml(a.location) + ']</div>' +
                     '</div>' +
-                    '<div style="display:flex; gap:6px;">' +
+                    '<div style="display:flex; gap:6px; align-items:center;">' +
+                    '<button type="button" class="btn-primary btn-wa-act" style="padding:4px 8px; font-size:12px; width:auto; background:#16A34A; border-color:#15803D;" title="Kirim Pengingat WhatsApp ke Ustadz">💬 Kirim WA</button>' +
                     '<button type="button" class="btn-primary btn-edit-act" style="padding:4px 8px; font-size:12px; width:auto;">✏️ Edit</button>' +
                     '<button type="button" class="btn-danger btn-del-act">Hapus</button>' +
                     '</div>';
+                li.querySelector('.btn-wa-act').onclick = function() {
+                    sendActivityWaReminder(a.id, a.speaker, a.speakerPhone);
+                };
                 li.querySelector('.btn-edit-act').onclick = function() {
-                    startEditActivity(a.id, a.title, a.speaker, a.date, a.time, a.location, a.category);
+                    startEditActivity(a.id, a.title, a.speaker, a.speakerPhone || '', a.date, a.time, a.location, a.category);
                 };
                 li.querySelector('.btn-del-act').onclick = function() {
                     deleteActivity(a.id);
@@ -7129,9 +7559,13 @@ class LocalHttpServer(
             document.getElementById('friDate').value = (fri.date && !fri.date.startsWith("Jum'at Ke-")) ? fri.date : '';
             document.getElementById('friHijriDate').value = (fri.hijriDate && !fri.hijriDate.startsWith("Jum'at Ke-")) ? fri.hijriDate : '';
             document.getElementById('friKhotib').value = fri.khotib || '';
+            if (document.getElementById('friKhotibPhone')) document.getElementById('friKhotibPhone').value = fri.khotibPhone || '';
             document.getElementById('friImam').value = fri.imam || '';
+            if (document.getElementById('friImamPhone')) document.getElementById('friImamPhone').value = fri.imamPhone || '';
             document.getElementById('friMuadzin').value = fri.muadzin || '';
+            if (document.getElementById('friMuadzinPhone')) document.getElementById('friMuadzinPhone').value = fri.muadzinPhone || '';
             document.getElementById('friBilal').value = fri.bilal || '';
+            if (document.getElementById('friBilalPhone')) document.getElementById('friBilalPhone').value = fri.bilalPhone || '';
             document.getElementById('friNotes').value = fri.notes || '';
         }
 
@@ -7150,9 +7584,13 @@ class LocalHttpServer(
                 date: document.getElementById('friDate').value,
                 hijriDate: document.getElementById('friHijriDate').value,
                 khotib: document.getElementById('friKhotib').value,
+                khotibPhone: document.getElementById('friKhotibPhone')?.value || '',
                 imam: document.getElementById('friImam').value,
+                imamPhone: document.getElementById('friImamPhone')?.value || '',
                 muadzin: document.getElementById('friMuadzin').value,
+                muadzinPhone: document.getElementById('friMuadzinPhone')?.value || '',
                 bilal: document.getElementById('friBilal').value,
+                bilalPhone: document.getElementById('friBilalPhone')?.value || '',
                 notes: document.getElementById('friNotes').value
             };
             await fetch('/api/save-friday', { method: 'POST', body: JSON.stringify(payload) });
@@ -7163,15 +7601,21 @@ class LocalHttpServer(
         // --- KEGIATAN CRUD ---
         window.editingActId = null;
 
-        function startEditActivity(id, title, speaker, date, time, location, category) {
+        function startEditActivity(id, title, speaker, speakerPhone, date, time, location, category) {
             const html = '<form onsubmit="handleModalSaveActivity(event, ' + id + ')">' +
                 '<div style="margin-bottom:12px;">' +
                     '<label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#0F172A; font-weight:700;">Nama Agenda / Kajian</label>' +
                     '<input type="text" id="modalActTitle" class="form-input" value="' + escapeHtml(title) + '" required style="width:100%;">' +
                 '</div>' +
-                '<div style="margin-bottom:12px;">' +
-                    '<label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#0F172A; font-weight:700;">Penceramah / Pengisi / Ustadz</label>' +
-                    '<input type="text" id="modalActSpeaker" class="form-input" value="' + escapeHtml(speaker || '') + '" style="width:100%;">' +
+                '<div class="grid-2" style="margin-bottom:12px;">' +
+                    '<div>' +
+                        '<label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#0F172A; font-weight:700;">Penceramah / Pengisi / Ustadz</label>' +
+                        '<input type="text" id="modalActSpeaker" class="form-input" value="' + escapeHtml(speaker || '') + '" style="width:100%;">' +
+                    '</div>' +
+                    '<div>' +
+                        '<label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:#0F172A; font-weight:700;">No. WhatsApp Pemateri (Reminder)</label>' +
+                        '<input type="tel" id="modalActSpeakerPhone" class="form-input" value="' + escapeHtml(speakerPhone || '') + '" placeholder="08123456789" style="width:100%;">' +
+                    '</div>' +
                 '</div>' +
                 '<div class="grid-2" style="margin-bottom:12px;">' +
                     '<div>' +
@@ -7207,6 +7651,7 @@ class LocalHttpServer(
                 id: id,
                 title: document.getElementById('modalActTitle').value,
                 speaker: document.getElementById('modalActSpeaker').value,
+                speakerPhone: document.getElementById('modalActSpeakerPhone')?.value || '',
                 date: document.getElementById('modalActDate').value,
                 time: document.getElementById('modalActTime').value,
                 location: document.getElementById('modalActLocation').value,
@@ -7226,6 +7671,7 @@ class LocalHttpServer(
             window.editingActId = null;
             document.getElementById('actTitle').value = '';
             document.getElementById('actSpeaker').value = '';
+            if (document.getElementById('actSpeakerPhone')) document.getElementById('actSpeakerPhone').value = '';
             document.getElementById('actDate').value = '';
             document.getElementById('actTime').value = '';
             document.getElementById('actLocation').value = '';
@@ -7240,6 +7686,7 @@ class LocalHttpServer(
             const payload = {
                 title: document.getElementById('actTitle').value,
                 speaker: document.getElementById('actSpeaker').value,
+                speakerPhone: document.getElementById('actSpeakerPhone')?.value || '',
                 date: document.getElementById('actDate').value,
                 time: document.getElementById('actTime').value,
                 location: document.getElementById('actLocation').value,
@@ -7254,6 +7701,7 @@ class LocalHttpServer(
                 await fetch('/api/add-activity', { method: 'POST', body: JSON.stringify(payload) });
                 document.getElementById('actTitle').value = '';
                 document.getElementById('actSpeaker').value = '';
+                if (document.getElementById('actSpeakerPhone')) document.getElementById('actSpeakerPhone').value = '';
                 showToast('Agenda Berhasil Ditambahkan!');
             }
             loadStatus();
@@ -7264,6 +7712,191 @@ class LocalHttpServer(
                 await fetch('/api/delete-activity', { method: 'POST', body: JSON.stringify({ id }) });
                 showToast('Agenda dihapus');
                 loadStatus();
+            }
+        }
+
+        // --- WHATSAPP GATEWAY HANDLERS ---
+        async function saveWaConfig(e) {
+            e.preventDefault();
+            const payload = {
+                enabled: document.getElementById('cfgWaEnabled')?.checked || false,
+                token: document.getElementById('cfgWaToken')?.value || '',
+                sendHourThursday: parseInt(document.getElementById('cfgWaSendThursdayHour')?.value || '9'),
+                sendHourFriday: parseInt(document.getElementById('cfgWaSendFridayHour')?.value || '9'),
+                templateThursday: document.getElementById('cfgWaTemplateThursday')?.value || '',
+                templateFriday: document.getElementById('cfgWaTemplateFriday')?.value || '',
+                templateKajian: document.getElementById('cfgWaTemplateKajian')?.value || ''
+            };
+            try {
+                const res = await fetch('/api/wa-gateway/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast(data.message || 'Pengaturan WhatsApp Gateway Berhasil Disimpan!');
+                    loadStatus();
+                } else {
+                    alert('Gagal: ' + (data.message || 'Error saat menyimpan'));
+                }
+            } catch(err) {
+                alert('Gagal menghubungi server: ' + err);
+            }
+        }
+
+        async function checkWaDeviceStatus() {
+            const token = document.getElementById('cfgWaToken')?.value || '';
+            const badge = document.getElementById('waStatusBadge');
+            const details = document.getElementById('waStatusDetails');
+            if (badge) {
+                badge.innerText = 'MEMERIKSA KONEKSI...';
+                badge.style.background = '#FEF08A';
+                badge.style.color = '#854D0E';
+            }
+            try {
+                const res = await fetch('/api/wa-gateway/check-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    const devStatus = (data.deviceStatus || '').toLowerCase();
+                    if (devStatus === 'connect') {
+                        if (badge) {
+                            badge.innerText = 'TERHUBUNG (ONLINE)';
+                            badge.style.background = '#DCFCE7';
+                            badge.style.color = '#15803D';
+                        }
+                        if (details) {
+                            details.innerHTML = '🟢 <strong>Perangkat:</strong> ' + escapeHtml(data.deviceName || '-') + ' (' + escapeHtml(data.devicePhone || '-') + ') | <strong>Sisa Kuota:</strong> ' + escapeHtml(data.quota || '-') + ' pesan | <strong>Kedaluwarsa:</strong> ' + escapeHtml(data.expired || '-');
+                        }
+                    } else {
+                        if (badge) {
+                            badge.innerText = 'TERPUTUS (' + (data.deviceStatus || 'DISCONNECT').toUpperCase() + ')';
+                            badge.style.background = '#FEE2E2';
+                            badge.style.color = '#B91C1C';
+                        }
+                        if (details) {
+                            details.innerHTML = '⚠️ Perangkat belum terhubung ke WhatsApp. Silakan scan QR code di dashboard Fonnte.';
+                        }
+                    }
+                } else {
+                    if (badge) {
+                        badge.innerText = 'ERROR / TOKEN TIDAK VALID';
+                        badge.style.background = '#FEE2E2';
+                        badge.style.color = '#B91C1C';
+                    }
+                    if (details) {
+                        details.innerHTML = '❌ ' + escapeHtml(data.message || 'Gagal menghubungi server Fonnte');
+                    }
+                }
+            } catch(err) {
+                if (badge) {
+                    badge.innerText = 'GAGAL TERHUBUNG';
+                    badge.style.background = '#FEE2E2';
+                    badge.style.color = '#B91C1C';
+                }
+                if (details) details.innerHTML = '❌ Kesalahan jaringan: ' + err;
+            }
+        }
+
+        function sendTestWaModal() {
+            const html = '<form onsubmit="handleSendTestWaSubmit(event)">' +
+                '<div style="margin-bottom:12px;">' +
+                    '<label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px; color:#0F172A;">Nomor WhatsApp Tujuan Uji Coba</label>' +
+                    '<input type="tel" id="testWaPhone" class="form-input" placeholder="Contoh: 08123456789 atau 628123456789" required style="width:100%;">' +
+                '</div>' +
+                '<div style="margin-bottom:16px;">' +
+                    '<label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px; color:#0F172A;">Isi Pesan Uji Coba</label>' +
+                    '<textarea id="testWaMsg" class="form-input" rows="3" style="width:100%; resize:vertical;">Assalamu\'alaikum. Ini adalah pesan uji coba dari sistem otomatis MasjidKU TV WhatsApp Gateway.</textarea>' +
+                '</div>' +
+                '<div style="display:flex; gap:10px; justify-content:flex-end;">' +
+                    '<button type="button" class="btn-secondary" onclick="closeUniversalModal()" style="width:auto; padding:8px 16px;">Batal</button>' +
+                    '<button type="submit" class="btn-primary" style="width:auto; padding:8px 18px; background:#16A34A; border-color:#15803D;">📨 Kirim Pesan Uji Coba</button>' +
+                '</div>' +
+            '</form>';
+            openUniversalModal('📨 Tes Kirim Pesan WhatsApp', html);
+        }
+
+        async function handleSendTestWaSubmit(e) {
+            e.preventDefault();
+            const phone = document.getElementById('testWaPhone')?.value || '';
+            const msg = document.getElementById('testWaMsg')?.value || '';
+            const token = document.getElementById('cfgWaToken')?.value || '';
+            try {
+                const res = await fetch('/api/wa-gateway/send-test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone, message: msg, token: token })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('✅ ' + (data.message || 'Pesan tes berhasil dikirim!'));
+                    closeUniversalModal();
+                } else {
+                    alert('Gagal kirim pesan tes: ' + (data.message || 'Error'));
+                }
+            } catch(err) {
+                alert('Gagal menghubungi server: ' + err);
+            }
+        }
+
+        async function sendManualFridayBroadcast(type) {
+            const typeLabel = (type === 'THURSDAY') ? 'H-1 (Hari Kamis)' : 'Hari H (Hari Jum\'at)';
+            if (!confirm('Kirim pesan pengingat Sholat Jum\'at format ' + typeLabel + ' ke seluruh petugas sekarang?')) {
+                return;
+            }
+            const logBox = document.getElementById('waBroadcastLogBox');
+            if (logBox) {
+                logBox.style.display = 'block';
+                logBox.innerHTML = '⏳ Sedang memproses dan mengirimkan pesan WhatsApp ke petugas Jum\'at...';
+            }
+            try {
+                const res = await fetch('/api/wa-gateway/send-friday-reminder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: type, weekId: window.currentFriWeek || 1 })
+                });
+                const data = await res.json();
+                if (logBox) {
+                    logBox.innerHTML = '📋 <strong>Hasil Broadcast:</strong> ' + escapeHtml(data.message || '');
+                }
+                if (data.status === 'ok') {
+                    showToast('✅ ' + (data.message || 'Pesan broadcast berhasil dikirim!'));
+                    loadStatus();
+                } else {
+                    alert('Hasil pengiriman: ' + (data.message || 'Gagal'));
+                }
+            } catch(err) {
+                if (logBox) logBox.innerHTML = '❌ Kesalahan: ' + err;
+                alert('Gagal menghubungi server: ' + err);
+            }
+        }
+
+        async function sendActivityWaReminder(activityId, speaker, phone) {
+            if (!phone) {
+                alert('Nomor WhatsApp untuk pemateri ' + (speaker || '') + ' belum diisi. Silakan edit agenda dan isi nomor WA terlebih dahulu.');
+                return;
+            }
+            if (!confirm('Kirim pesan pengingat agenda dakwah ke Ustadz ' + (speaker || '') + ' (' + phone + ') sekarang?')) {
+                return;
+            }
+            try {
+                const res = await fetch('/api/wa-gateway/send-activity-reminder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: activityId })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showToast('✅ ' + (data.message || 'Pesan pengingat kajian berhasil dikirim!'));
+                } else {
+                    alert('Gagal kirim pesan: ' + (data.message || 'Error'));
+                }
+            } catch(err) {
+                alert('Gagal menghubungi server: ' + err);
             }
         }
 

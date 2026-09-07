@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
         DailyImamScheduleEntity::class,
         MurottalAudioEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 abstract class MasjidDatabase : RoomDatabase() {
@@ -328,6 +328,39 @@ abstract class MasjidDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_19_20 = object : androidx.room.migration.Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Mosque Config - WhatsApp Gateway (Fonnte)
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayEnabled INTEGER NOT NULL DEFAULT 0")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayProvider TEXT NOT NULL DEFAULT 'FONNTE'")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayToken TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewaySendThursdayHour INTEGER NOT NULL DEFAULT 9")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewaySendFridayHour INTEGER NOT NULL DEFAULT 9")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayLastSentThursdayDate TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayLastSentFridayDate TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayTemplateThursday TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayTemplateFriday TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayTemplateKajian TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE mosque_config ADD COLUMN waGatewayLastLogJson TEXT NOT NULL DEFAULT ''")
+
+                // Friday Schedules - Officer Phone Numbers
+                safeExecSQL(db, "ALTER TABLE friday_schedules ADD COLUMN khotibPhone TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE friday_schedules ADD COLUMN imamPhone TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE friday_schedules ADD COLUMN muadzinPhone TEXT NOT NULL DEFAULT ''")
+                safeExecSQL(db, "ALTER TABLE friday_schedules ADD COLUMN bilalPhone TEXT NOT NULL DEFAULT ''")
+
+                // Mosque Activities - Speaker Phone Number
+                safeExecSQL(db, "ALTER TABLE mosque_activities ADD COLUMN speakerPhone TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        val MIGRATION_1_20 = object : androidx.room.migration.Migration(1, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                MIGRATION_1_19.migrate(db)
+                MIGRATION_19_20.migrate(db)
+            }
+        }
+
         // Direct migration from version 1, 2, 3, 4, 5, 6, 7 to 9
         val MIGRATION_1_9 = object : androidx.room.migration.Migration(1, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -399,7 +432,9 @@ abstract class MasjidDatabase : RoomDatabase() {
                         MIGRATION_17_18,
                         MIGRATION_1_18,
                         MIGRATION_18_19,
-                        MIGRATION_1_19
+                        MIGRATION_1_19,
+                        MIGRATION_19_20,
+                        MIGRATION_1_20
                     )
                     .fallbackToDestructiveMigration()
                     .addCallback(DatabaseCallback(scope))

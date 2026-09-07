@@ -180,7 +180,20 @@ class MasjidRepository(
                 clockFontFamily = entity.clockFontFamily,
                 clockColor = entity.clockColor,
                 clockColonColor = entity.clockColonColor,
-                clockSecondsColor = entity.clockSecondsColor
+                clockSecondsColor = entity.clockSecondsColor,
+
+                // --- Pengaturan WhatsApp Gateway (Fonnte) ---
+                waGatewayEnabled = entity.waGatewayEnabled,
+                waGatewayProvider = entity.waGatewayProvider,
+                waGatewayToken = entity.waGatewayToken,
+                waGatewaySendThursdayHour = entity.waGatewaySendThursdayHour,
+                waGatewaySendFridayHour = entity.waGatewaySendFridayHour,
+                waGatewayLastSentThursdayDate = entity.waGatewayLastSentThursdayDate,
+                waGatewayLastSentFridayDate = entity.waGatewayLastSentFridayDate,
+                waGatewayTemplateThursday = entity.waGatewayTemplateThursday,
+                waGatewayTemplateFriday = entity.waGatewayTemplateFriday,
+                waGatewayTemplateKajian = entity.waGatewayTemplateKajian,
+                waGatewayLastLogJson = entity.waGatewayLastLogJson
             )
         } else {
             MosqueConfig()
@@ -208,9 +221,13 @@ class MasjidRepository(
                 date = entity.date,
                 hijriDate = entity.hijriDate,
                 khotib = entity.khotib,
+                khotibPhone = entity.khotibPhone,
                 imam = entity.imam,
+                imamPhone = entity.imamPhone,
                 muadzin = entity.muadzin,
+                muadzinPhone = entity.muadzinPhone,
                 bilal = entity.bilal,
+                bilalPhone = entity.bilalPhone,
                 khutbahTopic = entity.khutbahTopic,
                 notes = entity.notes
             )
@@ -224,9 +241,13 @@ class MasjidRepository(
                 date = entity.date,
                 hijriDate = entity.hijriDate,
                 khotib = entity.khotib,
+                khotibPhone = entity.khotibPhone,
                 imam = entity.imam,
+                imamPhone = entity.imamPhone,
                 muadzin = entity.muadzin,
+                muadzinPhone = entity.muadzinPhone,
                 bilal = entity.bilal,
+                bilalPhone = entity.bilalPhone,
                 khutbahTopic = entity.khutbahTopic,
                 notes = entity.notes
             )
@@ -236,9 +257,13 @@ class MasjidRepository(
                 date = "Jum'at",
                 hijriDate = "Jum'at Barakah",
                 khotib = "Prof. Dr. KH. Ahmad Syakir, M.A.",
+                khotibPhone = "",
                 imam = "Ustadz H. M. Firdaus Al-Hafidz",
+                imamPhone = "",
                 muadzin = "Ustadz Bilal Ramadhan",
+                muadzinPhone = "",
                 bilal = "Akhi Muhammad Syahril",
+                bilalPhone = "",
                 khutbahTopic = "Menjaga Keistiqomahan Ibadah & Keikhlasan Hati"
             )
         }
@@ -250,6 +275,7 @@ class MasjidRepository(
                 id = entity.id,
                 title = entity.title,
                 speaker = entity.speaker,
+                speakerPhone = entity.speakerPhone,
                 date = entity.date,
                 time = entity.time,
                 location = entity.location,
@@ -512,7 +538,31 @@ class MasjidRepository(
                 clockFontFamily = config.clockFontFamily,
                 clockColor = config.clockColor,
                 clockColonColor = config.clockColonColor,
-                clockSecondsColor = config.clockSecondsColor
+                clockSecondsColor = config.clockSecondsColor,
+
+                // --- Pengaturan WhatsApp Gateway (Fonnte) ---
+                waGatewayEnabled = config.waGatewayEnabled,
+                waGatewayProvider = config.waGatewayProvider,
+                waGatewayToken = config.waGatewayToken,
+                waGatewaySendThursdayHour = config.waGatewaySendThursdayHour,
+                waGatewaySendFridayHour = config.waGatewaySendFridayHour,
+                waGatewayLastSentThursdayDate = config.waGatewayLastSentThursdayDate,
+                waGatewayLastSentFridayDate = config.waGatewayLastSentFridayDate,
+                waGatewayTemplateThursday = config.waGatewayTemplateThursday,
+                waGatewayTemplateFriday = config.waGatewayTemplateFriday,
+                waGatewayTemplateKajian = config.waGatewayTemplateKajian,
+                waGatewayLastLogJson = config.waGatewayLastLogJson
+            )
+        )
+    }
+
+    suspend fun updateWaGatewayLastSent(thursdayDate: String? = null, fridayDate: String? = null, logJson: String? = null) {
+        val current = configFlow.first()
+        saveConfig(
+            current.copy(
+                waGatewayLastSentThursdayDate = thursdayDate ?: current.waGatewayLastSentThursdayDate,
+                waGatewayLastSentFridayDate = fridayDate ?: current.waGatewayLastSentFridayDate,
+                waGatewayLastLogJson = logJson ?: current.waGatewayLastLogJson
             )
         )
     }
@@ -555,20 +605,25 @@ class MasjidRepository(
                 date = schedule.date,
                 hijriDate = schedule.hijriDate,
                 khotib = schedule.khotib,
+                khotibPhone = schedule.khotibPhone,
                 imam = schedule.imam,
+                imamPhone = schedule.imamPhone,
                 muadzin = schedule.muadzin,
+                muadzinPhone = schedule.muadzinPhone,
                 bilal = schedule.bilal,
+                bilalPhone = schedule.bilalPhone,
                 khutbahTopic = schedule.khutbahTopic,
                 notes = schedule.notes
             )
         )
     }
 
-    suspend fun addActivity(title: String, speaker: String, date: String, time: String, location: String, description: String, category: String): Long {
+    suspend fun addActivity(title: String, speaker: String, speakerPhone: String = "", date: String, time: String, location: String, description: String, category: String): Long {
         return database.mosqueActivityDao().insert(
             MosqueActivityEntity(
                 title = title,
                 speaker = speaker,
+                speakerPhone = speakerPhone,
                 date = date,
                 time = time,
                 location = location,
@@ -578,12 +633,13 @@ class MasjidRepository(
         )
     }
 
-    suspend fun updateActivity(id: Long, title: String, speaker: String, date: String, time: String, location: String, description: String, category: String) {
+    suspend fun updateActivity(id: Long, title: String, speaker: String, speakerPhone: String = "", date: String, time: String, location: String, description: String, category: String) {
         database.mosqueActivityDao().update(
             MosqueActivityEntity(
                 id = id,
                 title = title,
                 speaker = speaker,
+                speakerPhone = speakerPhone,
                 date = date,
                 time = time,
                 location = location,

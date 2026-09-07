@@ -173,7 +173,20 @@ data class MosqueConfigEntity(
     val clockFontFamily: String = "RADIOLAND",
     val clockColor: String = "#FFFFFF",
     val clockColonColor: String = "#F59E0B",
-    val clockSecondsColor: String = "#F59E0B"
+    val clockSecondsColor: String = "#F59E0B",
+
+    // --- Pengaturan WhatsApp Gateway (Fonnte) ---
+    val waGatewayEnabled: Boolean = false,
+    val waGatewayProvider: String = "FONNTE",
+    val waGatewayToken: String = "",
+    val waGatewaySendThursdayHour: Int = 9,
+    val waGatewaySendFridayHour: Int = 9,
+    val waGatewayLastSentThursdayDate: String = "",
+    val waGatewayLastSentFridayDate: String = "",
+    val waGatewayTemplateThursday: String = "",
+    val waGatewayTemplateFriday: String = "",
+    val waGatewayTemplateKajian: String = "",
+    val waGatewayLastLogJson: String = ""
 )
 
 @Entity(tableName = "finance_transactions")
@@ -193,9 +206,13 @@ data class FridayOfficerEntity(
     val date: String,
     val hijriDate: String,
     val khotib: String,
+    val khotibPhone: String = "",
     val imam: String,
+    val imamPhone: String = "",
     val muadzin: String,
+    val muadzinPhone: String = "",
     val bilal: String,
+    val bilalPhone: String = "",
     val khutbahTopic: String,
     val notes: String = ""
 )
@@ -205,6 +222,7 @@ data class MosqueActivityEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
     val speaker: String,
+    val speakerPhone: String = "",
     val date: String,
     val time: String,
     val location: String = "Ruang Utama Masjid",

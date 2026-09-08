@@ -968,6 +968,13 @@ class MasjidRepository(
                 )
             }
         }
+
+        // Seed Tarawih Schedules (30 malam) - penting untuk upgrade dari DB v21 ke v22
+        val tarawihList = database.tarawihScheduleDao().getAllSchedules()
+        if (tarawihList.isEmpty()) {
+            val defaults = MasjidDatabase.generateDefaultTarawihSchedules()
+            database.tarawihScheduleDao().insertAll(defaults)
+        }
     }
 
     suspend fun getTarawihSchedules(): List<TarawihSchedule> {

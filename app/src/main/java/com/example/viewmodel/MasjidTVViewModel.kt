@@ -540,11 +540,13 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
         var count = 0
         if (config.showFinancialReport) count++
         if (config.showFridayOfficers) count++
+        if (config.tarawihEnabled && config.tarawihShowSlide && state.activeTarawihSchedule != null) count++
         if (config.showActivities) count++
         if (config.showDailyMaklumat) count++
         if (config.showQrisCard) count++
         if (config.showDailyHadith) count++
         if (config.showYoutubeLiveSlide && config.youtubeLiveUrl.isNotBlank()) count++
+        if (config.showCctvSlide && config.cctvStreamUrl.isNotBlank()) count++
         count += state.activeMediaSlides.size
 
         return count

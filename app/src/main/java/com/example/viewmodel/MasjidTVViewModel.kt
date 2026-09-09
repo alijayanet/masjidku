@@ -461,13 +461,25 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                                 targetPhone = phone,
                                 messageText = msg
                             )
-                            logList.add("${role} ($name): ${if (res.success) "Sukses" else "Gagal (${res.message})"}")
+                            logList.add("$role ($name): ${if (res.success) "Sukses" else "Gagal (${res.message})"}")
+                        } else if (name.isNotBlank()) {
+                            // Nama ada tapi nomor kosong — catat agar admin tahu
+                            logList.add("$role ($name): Dilewati (nomor HP belum diisi)")
                         }
                     }
 
-                    val logSummary = "[Auto Kamis $todayDateStr] " + logList.joinToString(" | ")
+                    val logSummary = "[Auto Kamis $todayDateStr] " +
+                        if (logList.isEmpty()) "Tidak ada petugas dengan nomor HP terdaftar"
+                        else logList.joinToString(" | ")
                     repository.updateWaGatewayLastSent(thursdayDate = todayDateStr, logJson = logSummary)
-                } catch (_: Throwable) {
+                } catch (e: Throwable) {
+                    // Tandai tanggal sudah dicoba agar tidak looping terus
+                    try {
+                        repository.updateWaGatewayLastSent(
+                            thursdayDate = todayDateStr,
+                            logJson = "[Auto Kamis $todayDateStr] ERROR: ${e.message}"
+                        )
+                    } catch (_: Throwable) {}
                 } finally {
                     isSendingWaReminder = false
                 }
@@ -475,7 +487,7 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
         }
 
         // 2. Friday reminder at waGatewaySendFridayHour (default 9:00 AM)
-        if (dayOfWeek == Calendar.FRIDAY && hour >= config.waGatewaySendFridayHour && config.waGatewayLastSentFridayDate != todayDateStr) {
+        else if (dayOfWeek == Calendar.FRIDAY && hour >= config.waGatewaySendFridayHour && config.waGatewayLastSentFridayDate != todayDateStr) {
             isSendingWaReminder = true
             viewModelScope.launch(Dispatchers.IO) {
                 try {
@@ -505,13 +517,24 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                                 targetPhone = phone,
                                 messageText = msg
                             )
-                            logList.add("${role} ($name): ${if (res.success) "Sukses" else "Gagal (${res.message})"}")
+                            logList.add("$role ($name): ${if (res.success) "Sukses" else "Gagal (${res.message})"}")
+                        } else if (name.isNotBlank()) {
+                            logList.add("$role ($name): Dilewati (nomor HP belum diisi)")
                         }
                     }
 
-                    val logSummary = "[Auto Jum'at $todayDateStr] " + logList.joinToString(" | ")
+                    val logSummary = "[Auto Jum'at $todayDateStr] " +
+                        if (logList.isEmpty()) "Tidak ada petugas dengan nomor HP terdaftar"
+                        else logList.joinToString(" | ")
                     repository.updateWaGatewayLastSent(fridayDate = todayDateStr, logJson = logSummary)
-                } catch (_: Throwable) {
+                } catch (e: Throwable) {
+                    // Tandai tanggal sudah dicoba agar tidak looping terus
+                    try {
+                        repository.updateWaGatewayLastSent(
+                            fridayDate = todayDateStr,
+                            logJson = "[Auto Jum'at $todayDateStr] ERROR: ${e.message}"
+                        )
+                    } catch (_: Throwable) {}
                 } finally {
                     isSendingWaReminder = false
                 }
@@ -812,7 +835,9 @@ class MasjidTVViewModel(application: Application) : AndroidViewModel(application
                     activeMuadzinName = officers.muadzin,
                     activeKhotibName = officers.khotib,
                     activeBilalName = officers.bilal,
-                    isFridayPrayer = officers.isFriday
+                    isFridayPrayer = officers.isFriday,
+                    isHariRaya = officers.isHariRaya,
+                    hariRayaEventTitle = officers.eventTitle
                 )
             }
         }

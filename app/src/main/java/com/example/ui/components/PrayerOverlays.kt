@@ -593,6 +593,8 @@ fun IqomahOverlay(
     prayerName: PrayerName,
     remainingSeconds: Int,
     imamName: String = "",
+    khotibName: String = "",
+    bilalName: String = "",
     isFriday: Boolean = false,
     config: MosqueConfig? = null,
     onDismiss: () -> Unit,
@@ -699,29 +701,17 @@ fun IqomahOverlay(
                 letterSpacing = (-0.5).sp
             )
 
-            if (imamName.isNotBlank()) {
+            // Imam, Khotib, Bilal Badges (Responsive - tampil semua petugas untuk Jumat/Hari Raya)
+            if (imamName.isNotBlank() || khotibName.isNotBlank()) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0x33000000))
-                        .border(1.5.dp, SleekAmber400.copy(alpha = 0.8f), RoundedCornerShape(16.dp))
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text("👳", fontSize = 24.sp)
-                    Column {
-                        Text(
-                            text = if (isHariRaya) "IMAM SHOLAT IED:" else "IMAM SHOLAT:",
-                            fontSize = 11.5.sp,
-                            color = SleekAmber300,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        )
-                        Text(imamName, fontSize = 22.sp, fontWeight = FontWeight.Black, color = TextWhite)
-                    }
-                }
+                PrayerOfficersBadges(
+                    imamName = imamName,
+                    muadzinName = "",
+                    khotibName = khotibName,
+                    bilalName = bilalName,
+                    isFridayDzuhur = isFridayDzuhur,
+                    isHariRaya = isHariRaya
+                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -800,6 +790,8 @@ fun SholatSilentOverlay(
     prayerName: PrayerName = PrayerName.DZUHUR,
     remainingSeconds: Int,
     imamName: String = "",
+    khotibName: String = "",
+    bilalName: String = "",
     isFriday: Boolean = false,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -848,13 +840,16 @@ fun SholatSilentOverlay(
                 textAlign = TextAlign.Center
             )
 
-            if (imamName.isNotBlank()) {
+            // Tampilkan semua petugas (Khotib, Imam, Bilal) untuk Jumat & Hari Raya
+            if (imamName.isNotBlank() || khotibName.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = if (isHariRaya) "Imam Sholat: $imamName" else "Imam: $imamName",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    color = SleekAmber300
+                PrayerOfficersBadges(
+                    imamName = imamName,
+                    muadzinName = "",
+                    khotibName = khotibName,
+                    bilalName = bilalName,
+                    isFridayDzuhur = isFridayDzuhur,
+                    isHariRaya = isHariRaya
                 )
             }
 

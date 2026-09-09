@@ -369,6 +369,8 @@ fun HomeScreen(
                     prayerName = uiState.adhanPrayerName,
                     remainingSeconds = uiState.iqomahRemainingSeconds,
                     imamName = uiState.activeImamName,
+                    khotibName = uiState.activeKhotibName,
+                    bilalName = uiState.activeBilalName,
                     isFriday = isFridayNow,
                     config = uiState.config,
                     onDismiss = { viewModel.resetToNormalMode() }
@@ -384,6 +386,8 @@ fun HomeScreen(
                     prayerName = uiState.adhanPrayerName,
                     remainingSeconds = uiState.sholatSilentRemainingSeconds,
                     imamName = uiState.activeImamName,
+                    khotibName = uiState.activeKhotibName,
+                    bilalName = uiState.activeBilalName,
                     isFriday = isFridayNow,
                     onDismiss = { viewModel.resetToNormalMode() }
                 )

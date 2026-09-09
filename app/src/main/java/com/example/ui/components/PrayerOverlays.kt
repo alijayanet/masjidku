@@ -457,7 +457,7 @@ fun AdhanOverlay(
     val isFridayDzuhur = (isFriday && prayerName == PrayerName.DZUHUR) && !isHariRaya
     val prayerTitle = when {
         isHariRaya -> prayerName.displayName.uppercase()
-        isFridayDzuhur -> "SHOLAT JUM'AT"
+        isFridayDzuhur -> "JUM'AT"
         else -> prayerName.displayName.uppercase()
     }
 
@@ -856,7 +856,7 @@ fun SholatSilentOverlay(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = if (isHariRaya) "سَوُّوا صُفُوفَكُمْ وَاسْتَمِعُوا لِلْخُطْبَةِ رَحِمَكُمُ اللهُ" else "سَوُّوا صُفُوفَكُمْ فَإِنَّ تَسْوِيَةَ الصُّفُوفِ مِنْ إِقَامَةِ الصَّلَاةِ",
+                text = if (isHariRaya || isFridayDzuhur) "سَوُّوا صُفُوفَكُمْ وَاسْتَمِعُوا لِلْخُطْبَةِ رَحِمَكُمُ اللهُ" else "سَوُّوا صُفُوفَكُمْ فَإِنَّ تَسْوِيَةَ الصُّفُوفِ مِنْ إِقَامَةِ الصَّلَاةِ",
                 fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
                 color = SleekAmber300,
@@ -866,7 +866,11 @@ fun SholatSilentOverlay(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = if (isHariRaya) "“Luruskan shaf, dirikan sholat dan dengarkan khutbah dengan khusyuk serta seksama.”" else "“Luruskan shaf-shaf kalian, karena meluruskan shaf adalah bagian dari kesempurnaan sholat.”",
+                text = when {
+                    isHariRaya -> "“Luruskan shaf, dirikan sholat dan dengarkan khutbah dengan khusyuk serta seksama.”"
+                    isFridayDzuhur -> "“Luruskan shaf, dengarkan khutbah Jum'at dan dirikan sholat dengan khusyuk serta seksama.”"
+                    else -> "“Luruskan shaf-shaf kalian, karena meluruskan shaf adalah bagian dari kesempurnaan sholat.”"
+                },
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
                 color = TextWhiteMuted,

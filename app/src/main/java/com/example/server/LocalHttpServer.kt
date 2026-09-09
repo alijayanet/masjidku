@@ -4455,16 +4455,20 @@ class LocalHttpServer(
                     <h2>Uji Coba & Simulasi Layar TV</h2>
                 </div>
                 <div class="grid-3">
-                    <button class="btn-gold" onclick="triggerAction('preadhan')">⏳ Simulasi Pra-Adzan (30s)</button>
-                    <button class="btn-gold" onclick="triggerAction('adhan')">📢 Simulasi Masuk Adzan</button>
-                    <button class="btn-gold" onclick="triggerAction('iqomah')">⏱️ Simulasi Iqomah</button>
+                    <button class="btn-gold" onclick="triggerAction('preadhan')">⏳ Pra-Adzan Harian (30s)</button>
+                    <button class="btn-gold" onclick="triggerAction('adhan')">📢 Adzan Sholat Harian</button>
+                    <button class="btn-gold" onclick="triggerAction('iqomah')">⏱️ Iqomah Harian</button>
                 </div>
                 <div class="grid-2" style="margin-top:10px;">
-                    <button class="btn-gold" onclick="triggerAction('preadhan_friday')" style="background:#047857; color:#fff; border-color:#065F46;">🕌 Simulasi Pra-Adzan Jum'at (30s)</button>
-                    <button class="btn-gold" onclick="triggerAction('adhan_friday')" style="background:#047857; color:#fff; border-color:#065F46;">🕌 Simulasi Adzan Jum'at</button>
+                    <button class="btn-gold" onclick="triggerAction('preadhan_friday')" style="background:#047857; color:#fff; border-color:#065F46; font-weight:bold;">🕌 Simulasi Pra-Adzan Jum'at (30s)</button>
+                    <button class="btn-gold" onclick="triggerAction('adhan_friday')" style="background:#047857; color:#fff; border-color:#065F46; font-weight:bold;">🕌 Simulasi Adzan Jum'at</button>
                 </div>
                 <div class="grid-2" style="margin-top:10px;">
-                    <button class="btn-gold" onclick="triggerAction('sholat')">📴 Simulasi Layar Hening Sholat</button>
+                    <button class="btn-gold" onclick="triggerAction('iqomah_friday')" style="background:#065F46; color:#fff; border-color:#047857; font-weight:bold;">⏱️ Simulasi Iqomah Jum'at</button>
+                    <button class="btn-gold" onclick="triggerAction('sholat_friday')" style="background:#065F46; color:#fff; border-color:#047857; font-weight:bold;">📴 Simulasi Hening Sholat Jum'at</button>
+                </div>
+                <div class="grid-2" style="margin-top:10px;">
+                    <button class="btn-gold" onclick="triggerAction('sholat')">📴 Simulasi Hening Harian</button>
                     <button class="btn-primary" onclick="triggerAction('reset')">🔄 Kembalikan ke Tampilan Normal</button>
                 </div>
                 <div style="margin-top:10px;">

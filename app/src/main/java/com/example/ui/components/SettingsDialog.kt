@@ -58,6 +58,7 @@ fun SettingsDialog(
     onDeleteRunningText: (Long) -> Unit,
     runningTexts: List<RunningTextItem>,
     onTriggerAdhan: () -> Unit,
+    onTriggerAdhanFriday: () -> Unit = {},
     onTriggerIqomah: () -> Unit,
     onTriggerSholat: () -> Unit,
     onTestChime: () -> Unit,
@@ -289,6 +290,7 @@ fun SettingsDialog(
                                     config = config,
                                     onSaveConfig = onSaveConfig,
                                     onTriggerAdhan = onTriggerAdhan,
+                                    onTriggerAdhanFriday = onTriggerAdhanFriday,
                                     onTriggerIqomah = onTriggerIqomah,
                                     onTriggerSholat = onTriggerSholat,
                                     onTestChime = onTestChime
@@ -741,6 +743,7 @@ private fun TabThemeAndSim(
     config: MosqueConfig,
     onSaveConfig: (MosqueConfig) -> Unit,
     onTriggerAdhan: () -> Unit,
+    onTriggerAdhanFriday: () -> Unit = {},
     onTriggerIqomah: () -> Unit,
     onTriggerSholat: () -> Unit,
     onTestChime: () -> Unit
@@ -899,8 +902,11 @@ private fun TabThemeAndSim(
             Button(onClick = onTestChime, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF37474F)), contentPadding = PaddingValues(vertical = 4.dp)) {
                 Text("🔔 Chime", fontSize = 10.sp)
             }
-            Button(onClick = onTriggerAdhan, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D5C3A)), contentPadding = PaddingValues(vertical = 4.dp)) {
-                Text("🕌 Adzan", fontSize = 10.sp)
+            Button(onClick = onTriggerAdhan, modifier = Modifier.weight(1.1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D5C3A)), contentPadding = PaddingValues(vertical = 4.dp)) {
+                Text("🕌 Adzan Harian", fontSize = 10.sp)
+            }
+            Button(onClick = onTriggerAdhanFriday, modifier = Modifier.weight(1.1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF047857)), contentPadding = PaddingValues(vertical = 4.dp)) {
+                Text("🕌 Adzan Jum'at", fontSize = 10.sp)
             }
             Button(onClick = onTriggerIqomah, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)), contentPadding = PaddingValues(vertical = 4.dp)) {
                 Text("⏱️ Iqomah", fontSize = 10.sp)

@@ -237,24 +237,24 @@ class MasjidRepository(
         }
     }
 
+    private fun FridayOfficerEntity.toModel(): FridaySchedule = FridaySchedule(
+        id = id,
+        date = date,
+        hijriDate = hijriDate,
+        khotib = khotib,
+        khotibPhone = khotibPhone,
+        imam = imam,
+        imamPhone = imamPhone,
+        muadzin = muadzin,
+        muadzinPhone = muadzinPhone,
+        bilal = bilal,
+        bilalPhone = bilalPhone,
+        khutbahTopic = khutbahTopic,
+        notes = notes
+    )
+
     val allFridaySchedulesFlow: Flow<List<FridaySchedule>> = database.fridayOfficerDao().getAllSchedulesFlow().map { list ->
-        list.map { entity ->
-            FridaySchedule(
-                id = entity.id,
-                date = entity.date,
-                hijriDate = entity.hijriDate,
-                khotib = entity.khotib,
-                khotibPhone = entity.khotibPhone,
-                imam = entity.imam,
-                imamPhone = entity.imamPhone,
-                muadzin = entity.muadzin,
-                muadzinPhone = entity.muadzinPhone,
-                bilal = entity.bilal,
-                bilalPhone = entity.bilalPhone,
-                khutbahTopic = entity.khutbahTopic,
-                notes = entity.notes
-            )
-        }
+        list.map { it.toModel() }
     }
 
     val fridayScheduleFlow: Flow<FridaySchedule> = database.fridayOfficerDao().getScheduleFlow(1).map { entity ->
@@ -1151,18 +1151,23 @@ class MasjidRepository(
             )
         }
 
-        if (isFriday && prayer == PrayerName.DZUHUR && config.showFridayOfficers) {
-            val fri = fridaySchedule
+        if (isFriday && prayer == PrayerName.DZUHUR) {
+            val fri = fridaySchedule ?: database.fridayOfficerDao().getAllSchedules().let { list ->
+                com.example.viewmodel.MasjidTVViewModel.resolveUpcomingFridaySchedule(
+                    list.map { it.toModel() },
+                    java.util.Calendar.getInstance()
+                )
+            }
             val imam = specific?.imamName?.takeIf { it.isNotBlank() }
-                ?: fri?.imam?.takeIf { it.isNotBlank() }
-                ?: fri?.khotib?.takeIf { it.isNotBlank() }
+                ?: fri.imam.takeIf { it.isNotBlank() }
+                ?: fri.khotib.takeIf { it.isNotBlank() }
                 ?: config.imamDzuhur
             val muadzin = specific?.muadzinName?.takeIf { it.isNotBlank() }
-                ?: fri?.muadzin?.takeIf { it.isNotBlank() }
-                ?: fri?.bilal?.takeIf { it.isNotBlank() }
+                ?: fri.muadzin.takeIf { it.isNotBlank() }
+                ?: fri.bilal.takeIf { it.isNotBlank() }
                 ?: config.muadzinDzuhur
-            val khotib = fri?.khotib ?: ""
-            val bilal = fri?.bilal ?: ""
+            val khotib = fri.khotib
+            val bilal = fri.bilal
             return ActivePrayerOfficers(
                 imam = imam,
                 muadzin = muadzin,

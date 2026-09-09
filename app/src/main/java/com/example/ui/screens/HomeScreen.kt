@@ -323,7 +323,7 @@ fun HomeScreen(
             }
         }
 
-            val isFridayNow = (uiState.isFridayPrayer || (uiState.currentCalendar.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY && uiState.adhanPrayerName == PrayerName.DZUHUR)) && uiState.config.showFridayOfficers
+            val isFridayNow = uiState.isFridayPrayer || (uiState.currentCalendar.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY && uiState.adhanPrayerName == PrayerName.DZUHUR)
 
             // Fullscreen Dynamic Overlays
             AnimatedVisibility(
@@ -452,6 +452,7 @@ fun HomeScreen(
                     onDeleteRunningText = { viewModel.deleteRunningText(it) },
                     runningTexts = uiState.activeRunningTexts,
                     onTriggerAdhan = { viewModel.triggerAdhanManual() },
+                    onTriggerAdhanFriday = { viewModel.triggerAdhanManual(forceFriday = true) },
                     onTriggerIqomah = { viewModel.triggerIqomahManual() },
                     onTriggerSholat = { viewModel.triggerSholatSilentManual() },
                     onTestChime = { viewModel.playChimeTest() },
